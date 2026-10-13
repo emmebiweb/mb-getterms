@@ -17,6 +17,8 @@ Plugin WordPress leggero per installare il CMP **GetTerms** senza il plugin uffi
 - Ha il pulsante **Verifica homepage**, che controlla che il banner ci sia una sola volta e sia il primo script, che GTM ci sia una sola volta e venga caricato dopo il banner, e che non ci siano altri CMP.
 - Si aggiorna automaticamente dalle release di questo repository.
 - **Pulsante preferenze cookie** (quello fisso che riapre il banner): stile originale GetTerms oppure **personalizzato**, con forma quadrata o tonda, colori di sfondo, del passaggio del mouse e dell'icona, dimensioni, lato e distanze. Il widget GetTerms usa uno Shadow DOM che il CSS del tema non raggiunge: il plugin inserisce lo stile direttamente nel widget e lo ripristina quando il widget si ridisegna. Il pulsante resta quello originale, con la stessa funzione e la stessa accessibilità.
+- **Link alle policy nel banner**: puoi scegliere le pagine del sito (Cookie Policy e Privacy Policy) a cui far puntare i link del banner, al posto delle pagine ospitate da GetTerms. I link si aprono nella stessa scheda.
+- Pagina impostazioni a schede (Generale, Google Tag Manager, Aspetto, Policy, Verifica), con il selettore colori di WordPress e l'anteprima dal vivo del pulsante preferenze.
 - **Angoli dei pulsanti del banner**: raggio in px per i pulsanti Accetta / Rifiuta / Preferenze / Salva, sia nel banner sia nella finestra preferenze (vuoto = come impostato in GetTerms).
 - **Resta attivo dopo gli aggiornamenti**: se WordPress lo disattiva durante l'aggiornamento, il plugin si riattiva da solo (dalla 1.1.0 in poi; l'aggiornamento *alla* 1.1.0 parte ancora dal codice 1.0.1).
 

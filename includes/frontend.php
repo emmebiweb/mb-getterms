@@ -257,25 +257,56 @@ function mb_gt_widget_css() {
 }
 
 /**
- * Stampa lo script che applica il CSS nello shadow root del widget.
+ * Mappa dei link policy da riscrivere nel banner: tipo => URL della pagina del sito.
+ *
+ * @return array
+ */
+function mb_gt_policy_link_map() {
+	$map = array();
+	foreach ( array(
+		'cookie'  => 'policy_cookie_page',
+		'privacy' => 'policy_privacy_page',
+	) as $type => $key ) {
+		$page_id = (int) mb_gt_get( $key );
+		if ( $page_id && 'publish' === get_post_status( $page_id ) ) {
+			$map[ $type ] = get_permalink( $page_id );
+		}
+	}
+	return (array) apply_filters( 'mb_gt_policy_link_map', $map );
+}
+
+/**
+ * Stampa lo script che personalizza il widget GetTerms (Shadow DOM):
+ * stile (pulsante preferenze, angoli dei pulsanti) e link alle policy.
+ * Il widget ridisegna periodicamente il suo contenuto: un MutationObserver
+ * riapplica tutto quando serve.
  */
 function mb_gt_print_reopen_button() {
 	if ( ! mb_gt_should_output() ) {
 		return;
 	}
-	$css = mb_gt_widget_css();
-	if ( '' === $css ) {
+	$css   = mb_gt_widget_css();
+	$links = mb_gt_policy_link_map();
+	if ( '' === $css && ! $links ) {
 		return;
 	}
-	$css = wp_json_encode( $css );
+	$config = wp_json_encode(
+		array(
+			'css'   => $css,
+			'links' => (object) $links,
+		)
+	);
 	// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
-	echo "<script id=\"mb-gt-reopen-btn\">(function(){var css=" . $css . ",ID='mb-gt-reopen-style';"
-		. "function apply(host){var sr=host&&host.shadowRoot;if(!sr)return false;"
-		. "if(!sr.getElementById(ID)){var st=document.createElement('style');st.id=ID;st.textContent=css;sr.appendChild(st);}"
-		. "if(!host.__mbGtObs){host.__mbGtObs=new MutationObserver(function(){if(!sr.getElementById(ID)){var st=document.createElement('style');st.id=ID;st.textContent=css;sr.appendChild(st);}});host.__mbGtObs.observe(sr,{childList:true});}return true;}"
-		. "function find(){var h=document.querySelector('cookie-widget-wrapper');return h&&apply(h);}"
-		. "if(!find()){var mo=new MutationObserver(function(){if(find())mo.disconnect();});mo.observe(document.documentElement,{childList:true,subtree:true});setTimeout(function(){mo.disconnect();},30000);}"
-		. "})();</script>\n";
+	echo '<script id="mb-gt-widget">(function(c){var ID="mb-gt-reopen-style";'
+		. 'var RE={cookie:/gettermscdn\\.com\\/view\\/[^\\/]+\\/cookies?\\//i,privacy:/gettermscdn\\.com\\/view\\/[^\\/]+\\/privacy\\//i};'
+		. 'function fix(sr){if(c.css&&!sr.getElementById(ID)){var st=document.createElement("style");st.id=ID;st.textContent=c.css;sr.appendChild(st);}'
+		. 'var as=sr.querySelectorAll("a[href*=\"gettermscdn.com/view/\"]");for(var i=0;i<as.length;i++){var a=as[i],h=a.getAttribute("href");'
+		. 'for(var t in c.links){if(RE[t]&&RE[t].test(h)){a.setAttribute("href",c.links[t]);a.removeAttribute("target");a.removeAttribute("rel");}}}}'
+		. 'function apply(host){var sr=host&&host.shadowRoot;if(!sr)return false;fix(sr);'
+		. 'if(!host.__mbGtObs){host.__mbGtObs=new MutationObserver(function(){fix(sr);});host.__mbGtObs.observe(sr,{childList:true,subtree:true});}return true;}'
+		. 'function find(){var h=document.querySelector("cookie-widget-wrapper");return h&&apply(h);}'
+		. 'if(!find()){var mo=new MutationObserver(function(){if(find())mo.disconnect();});mo.observe(document.documentElement,{childList:true,subtree:true});setTimeout(function(){mo.disconnect();},30000);}'
+		. '})(' . $config . ');</script>' . "\n";
 	// phpcs:enable
 }
 add_action( 'wp_footer', 'mb_gt_print_reopen_button', 100 );

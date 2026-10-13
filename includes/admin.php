@@ -109,6 +109,10 @@ function mb_gt_sanitize_settings( $input ) {
 		'btn_offset_x' => array( 0, 500 ),
 		'btn_offset_y' => array( 0, 1000 ),
 	);
+	foreach ( array( 'policy_cookie_page', 'policy_privacy_page' ) as $key ) {
+		$out[ $key ] = isset( $input[ $key ] ) ? absint( $input[ $key ] ) : (int) $current[ $key ];
+	}
+
 	$radius             = isset( $input['btns_radius'] ) ? trim( (string) $input['btns_radius'] ) : (string) $current['btns_radius'];
 	$out['btns_radius'] = ( '' === $radius ) ? '' : max( 0, min( 100, (int) $radius ) );
 
@@ -288,8 +292,9 @@ add_action(
 		if ( 'settings_page_' . MB_GT_SLUG !== $hook ) {
 			return;
 		}
-		wp_enqueue_style( 'mb-gt-admin', MB_GT_URL . 'assets/admin.css', array(), MB_GT_VERSION );
-		wp_enqueue_script( 'mb-gt-admin', MB_GT_URL . 'assets/admin.js', array(), MB_GT_VERSION, true );
+		wp_enqueue_style( 'wp-color-picker' );
+		wp_enqueue_style( 'mb-gt-admin', MB_GT_URL . 'assets/admin.css', array( 'wp-color-picker' ), MB_GT_VERSION );
+		wp_enqueue_script( 'mb-gt-admin', MB_GT_URL . 'assets/admin.js', array( 'jquery', 'wp-color-picker' ), MB_GT_VERSION, true );
 		wp_localize_script(
 			'mb-gt-admin',
 			'mbGtAdmin',
@@ -303,6 +308,51 @@ add_action(
 );
 
 /**
+ * Riga di impostazione: etichetta a sinistra, controllo a destra.
+ *
+ * @param string $label   Etichetta (HTML già sicuro).
+ * @param string $control HTML del controllo.
+ * @param string $help    Testo di aiuto (HTML già sicuro).
+ * @param string $class   Classe extra della riga.
+ */
+function mb_gt_row( $label, $control, $help = '', $class = '' ) {
+	echo '<div class="mb-gt-row ' . esc_attr( $class ) . '"><div class="mb-gt-row__label">' . $label . '</div><div class="mb-gt-row__control">' . $control; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	if ( $help ) {
+		echo '<p class="mb-gt-help">' . $help . '</p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+	echo '</div></div>';
+}
+
+/**
+ * Interruttore on/off.
+ *
+ * @param string $field  Nome campo.
+ * @param mixed  $value  Valore attuale.
+ * @param string $text   Testo accanto.
+ * @param bool   $locked Disabilitato.
+ * @return string
+ */
+function mb_gt_toggle( $field, $value, $text, $locked = false ) {
+	return '<label class="mb-gt-switch"><input type="checkbox" name="' . esc_attr( MB_GT_OPTION . '[' . $field . ']' ) . '" value="1"' . checked( (bool) $value, true, false ) . disabled( $locked, true, false ) . '><span class="mb-gt-switch__track" aria-hidden="true"></span><span class="mb-gt-switch__text">' . esc_html( $text ) . '</span></label>';
+}
+
+/**
+ * Gruppo di scelte a "pillole" (radio).
+ *
+ * @param string $field   Nome campo.
+ * @param string $value   Valore attuale.
+ * @param array  $choices valore => etichetta.
+ * @return string
+ */
+function mb_gt_segmented( $field, $value, array $choices ) {
+	$html = '<div class="mb-gt-seg" role="radiogroup">';
+	foreach ( $choices as $val => $label ) {
+		$html .= '<label><input type="radio" name="' . esc_attr( MB_GT_OPTION . '[' . $field . ']' ) . '" value="' . esc_attr( $val ) . '"' . checked( (string) $value, (string) $val, false ) . '><span>' . esc_html( $label ) . '</span></label>';
+	}
+	return $html . '</div>';
+}
+
+/**
  * Pagina impostazioni.
  */
 function mb_gt_render_settings_page() {
@@ -311,195 +361,223 @@ function mb_gt_render_settings_page() {
 	}
 	$s         = mb_gt_get();
 	$name      = MB_GT_OPTION;
+	$f         = function ( $key ) use ( $name ) {
+		return esc_attr( $name . '[' . $key . ']' );
+	};
 	$languages = mb_gt_available_languages();
 	$policies  = is_array( $s['policies'] ) ? $s['policies'] : array();
 	$connected = ! empty( $s['widget_slug'] );
+	$gtm       = mb_gt_gtm_id();
+	$lang_now  = mb_gt_norm_lang( $s['lang'] ? $s['lang'] : $s['default_language'] );
 	?>
 	<div class="wrap mb-gt">
-		<h1>mB GetTerms Consent <span class="mb-gt-version">v<?php echo esc_html( MB_GT_VERSION ); ?></span></h1>
-
-		<div class="mb-gt-status <?php echo $s['enabled'] ? 'is-on' : 'is-off'; ?>">
-			<?php if ( $s['enabled'] ) : ?>
-				<strong>Attivo sul sito.</strong> Banner GetTerms<?php echo mb_gt_gtm_id() ? ' + GTM ' . esc_html( mb_gt_gtm_id() ) : ''; ?> stampati in testa all'head.
-			<?php else : ?>
-				<strong>Non attivo.</strong> Il plugin non stampa nulla sul sito finché non attivi l'opzione qui sotto.
-			<?php endif; ?>
+		<div class="mb-gt-header">
+			<div>
+				<h1>GetTerms <span>by mB</span></h1>
+				<p class="mb-gt-header__sub">Banner cookie GetTerms, Google Tag Manager e policy &middot; v<?php echo esc_html( MB_GT_VERSION ); ?></p>
+			</div>
+			<div class="mb-gt-chips">
+				<span class="mb-gt-chip <?php echo $s['enabled'] ? 'is-on' : 'is-off'; ?>"><?php echo $s['enabled'] ? 'Attivo sul sito' : 'Non attivo'; ?></span>
+				<span class="mb-gt-chip <?php echo $connected ? 'is-ok' : 'is-warn'; ?>"><?php echo $connected ? 'GetTerms collegato' : 'GetTerms non collegato'; ?></span>
+				<span class="mb-gt-chip <?php echo $gtm ? 'is-ok' : ''; ?>"><?php echo $gtm ? esc_html( $gtm ) : 'GTM non inserito'; ?></span>
+				<?php if ( $lang_now ) : ?><span class="mb-gt-chip"><?php echo esc_html( strtoupper( $lang_now ) ); ?></span><?php endif; ?>
+			</div>
 		</div>
 
 		<?php settings_errors( MB_GT_OPTION ); ?>
 
-		<form method="post" action="options.php">
+		<nav class="mb-gt-tabs" role="tablist">
+			<button type="button" role="tab" data-tab="generale">Generale</button>
+			<button type="button" role="tab" data-tab="gtm">Google Tag Manager</button>
+			<button type="button" role="tab" data-tab="aspetto">Aspetto</button>
+			<button type="button" role="tab" data-tab="policy">Policy</button>
+			<button type="button" role="tab" data-tab="verifica">Verifica</button>
+		</nav>
+
+		<form method="post" action="options.php" class="mb-gt-form">
 			<?php settings_fields( 'mb_gt_group' ); ?>
-			<input type="hidden" name="<?php echo esc_attr( $name ); ?>[_form]" value="1">
+			<input type="hidden" name="<?php echo $f( '_form' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>" value="1">
 
-			<h2>1. Collegamento GetTerms</h2>
-			<table class="form-table" role="presentation">
-				<tr>
-					<th scope="row"><label for="mb-gt-token">Token GetTerms</label></th>
-					<td>
-						<input type="text" id="mb-gt-token" name="<?php echo esc_attr( $name ); ?>[token]" value="<?php echo esc_attr( $s['token'] ); ?>" class="regular-text code" autocomplete="off">
-						<button type="button" class="button button-secondary" id="mb-gt-sync">Collega / Sincronizza</button>
-						<p class="description">Lo trovi in GetTerms &rarr; Installation &rarr; WordPress plugin. Importa banner, lingue e policy disponibili.</p>
-						<p id="mb-gt-sync-msg" class="mb-gt-msg" hidden></p>
-						<?php if ( $connected ) : ?>
-							<p class="mb-gt-ok">
-								Banner: <code><?php echo esc_html( $s['widget_slug'] ); ?></code>
-								&middot; origine: <?php echo esc_html( 'token' === $s['source'] ? 'token' : 'embed code' ); ?>
-								<?php if ( $s['last_sync'] ) : ?>
-									&middot; ultima sincronizzazione: <?php echo esc_html( wp_date( 'd/m/Y H:i', (int) $s['last_sync'] ) ); ?>
-								<?php endif; ?>
-							</p>
+			<!-- GENERALE -->
+			<section class="mb-gt-panel" data-panel="generale">
+				<div class="mb-gt-card">
+					<h2>Collegamento a GetTerms</h2>
+					<?php
+					$token_html  = '<div class="mb-gt-inline"><input type="text" id="mb-gt-token" name="' . $f( 'token' ) . '" value="' . esc_attr( $s['token'] ) . '" class="regular-text code" autocomplete="off" placeholder="es. o7upf">';
+					$token_html .= '<button type="button" class="button" id="mb-gt-sync">Collega / Sincronizza</button></div><p id="mb-gt-sync-msg" class="mb-gt-msg" hidden></p>';
+					if ( $connected ) {
+						$token_html .= '<p class="mb-gt-meta">Banner <code>' . esc_html( $s['widget_slug'] ) . '</code>';
+						if ( $s['last_sync'] ) {
+							$token_html .= ' &middot; sincronizzato il ' . esc_html( wp_date( 'd/m/Y H:i', (int) $s['last_sync'] ) );
+						}
+						$token_html .= '</p>';
+					}
+					mb_gt_row( '<label for="mb-gt-token">Token GetTerms</label>', $token_html, 'In GetTerms: <em>Installation → WordPress plugin</em>. Importa banner, lingue e policy.' );
+					?>
+					<details class="mb-gt-details">
+						<summary>Configurazione alternativa con embed code</summary>
+						<?php mb_gt_row( '<label for="mb-gt-embed">Embed code</label>', '<textarea id="mb-gt-embed" name="' . $f( 'embed_code' ) . '" rows="3" class="large-text code" placeholder="&lt;!-- GetTerms CMP --&gt; ..."></textarea>', 'Solo se il token non funziona: il plugin ricava UUID e lingua dallo snippet. Le policy richiedono comunque il token.' ); ?>
+					</details>
+				</div>
+
+				<div class="mb-gt-card">
+					<h2>Banner</h2>
+					<?php
+					mb_gt_row( 'Attivazione', mb_gt_toggle( 'enabled', $s['enabled'], 'Stampa il banner (e GTM) nell\'head del sito', ! $connected ), 'Prima di attivare: disattiva l\'altro CMP e togli GTM da altri plugin o dal tema.' );
+
+					if ( $languages ) {
+						$sel = '<select name="' . $f( 'lang' ) . '">';
+						foreach ( $languages as $code => $label ) {
+							$sel .= '<option value="' . esc_attr( $code ) . '"' . selected( $lang_now, $code, false ) . '>' . esc_html( $label . ' (' . $code . ')' ) . '</option>';
+						}
+						$sel .= '</select>';
+					} else {
+						$sel = '<input type="text" name="' . $f( 'lang' ) . '" value="' . esc_attr( $s['lang'] ) . '" class="small-text code" placeholder="it">';
+					}
+					mb_gt_row(
+						'Lingua',
+						mb_gt_segmented( 'lang_mode', $s['lang_mode'], array( 'fixed' => 'Lingua fissa', 'site' => 'Segui la lingua della pagina' ) ) . '<div class="mb-gt-sub" data-show-if="lang_mode=fixed">' . $sel . '</div>' . mb_gt_toggle( 'auto_detect', $s['auto_detect'], 'Rileva la lingua del browser del visitatore' ),
+						'"Segui la lingua della pagina" per siti multilingua (WPML, Polylang, TranslatePress).'
+					);
+					?>
+				</div>
+			</section>
+
+			<!-- GTM -->
+			<section class="mb-gt-panel" data-panel="gtm">
+				<div class="mb-gt-card">
+					<h2>Google Tag Manager</h2>
+					<?php
+					mb_gt_row( 'Inserimento', mb_gt_toggle( 'gtm_enabled', $s['gtm_enabled'], 'Stampa GTM subito dopo il banner' ), 'Lascia spento se GTM è già inserito dal tema o da un altro plugin (e verifica che sia caricato dopo il banner).' );
+					mb_gt_row( '<label for="mb-gt-gtm">ID container</label>', '<input type="text" id="mb-gt-gtm" name="' . $f( 'gtm_id' ) . '" value="' . esc_attr( $s['gtm_id'] ) . '" class="regular-text code" placeholder="GTM-XXXXXXX">', '', 'mb-gt-dep-gtm' );
+					mb_gt_row( 'Noscript', mb_gt_toggle( 'gtm_noscript', $s['gtm_noscript'], 'Aggiungi l\'iframe noscript dopo <body>' ), 'Richiede un tema con <code>wp_body_open</code>.', 'mb-gt-dep-gtm' );
+					?>
+				</div>
+				<div class="mb-gt-card mb-gt-card--note">
+					<h2>Configurazione del container</h2>
+					<ul class="mb-gt-list">
+						<li>Tag <strong>GetTerms CMP</strong> (Community Template Gallery) su <em>Consent Initialization – All Pages</em>, senza GetTerms ID.</li>
+						<li>Google tag / GA4: <em>No additional consent required</em>, trigger <em>Initialization – All Pages</em>.</li>
+						<li>Tag non Google (Clarity, Meta, Hotjar…): <em>Require additional consent</em>.</li>
+					</ul>
+				</div>
+			</section>
+
+			<!-- ASPETTO -->
+			<section class="mb-gt-panel" data-panel="aspetto">
+				<div class="mb-gt-card">
+					<h2>Pulsante preferenze cookie</h2>
+					<p class="mb-gt-intro">Il pulsante fisso che riapre il banner per cambiare le scelte.</p>
+					<div class="mb-gt-split">
+						<div class="mb-gt-split__main">
+							<?php
+							mb_gt_row( 'Stile', mb_gt_segmented( 'btn_style', $s['btn_style'], array( 'original' => 'Originale GetTerms', 'custom' => 'Personalizzato' ) ) );
+							mb_gt_row( 'Forma', mb_gt_segmented( 'btn_shape', $s['btn_shape'], array( 'square' => 'Quadrata', 'round' => 'Tonda' ) ), '', 'mb-gt-dep-custom' );
+							$colors = '';
+							foreach ( array( 'btn_bg' => 'Sfondo', 'btn_bg_hover' => 'Al passaggio', 'btn_icon' => 'Icona' ) as $key => $label ) {
+								$colors .= '<div class="mb-gt-color"><span>' . esc_html( $label ) . '</span><input type="text" class="mb-gt-colorpicker" data-key="' . esc_attr( $key ) . '" name="' . $f( $key ) . '" value="' . esc_attr( $s[ $key ] ) . '" data-default-color="' . esc_attr( mb_gt_defaults()[ $key ] ) . '"></div>';
+							}
+							mb_gt_row( 'Colori', '<div class="mb-gt-colors">' . $colors . '</div>', '', 'mb-gt-dep-custom' );
+							mb_gt_row(
+								'Dimensione',
+								'<div class="mb-gt-inline"><label>L <input type="number" min="20" max="120" data-key="btn_width" name="' . $f( 'btn_width' ) . '" value="' . esc_attr( $s['btn_width'] ) . '" class="small-text"></label><span>&times;</span><label>A <input type="number" min="20" max="120" data-key="btn_height" name="' . $f( 'btn_height' ) . '" value="' . esc_attr( $s['btn_height'] ) . '" class="small-text"></label><span>px</span></div>',
+								'Con la forma tonda viene usato il lato maggiore.',
+								'mb-gt-dep-custom'
+							);
+							mb_gt_row(
+								'Posizione',
+								mb_gt_segmented( 'btn_side', $s['btn_side'], array( 'left' => 'Sinistra', 'right' => 'Destra' ) ) . '<div class="mb-gt-inline mb-gt-sub"><label>Dal bordo <input type="number" min="0" max="500" data-key="btn_offset_x" name="' . $f( 'btn_offset_x' ) . '" value="' . esc_attr( $s['btn_offset_x'] ) . '" class="small-text"> px</label><label>Dal basso <input type="number" min="0" max="1000" data-key="btn_offset_y" name="' . $f( 'btn_offset_y' ) . '" value="' . esc_attr( $s['btn_offset_y'] ) . '" class="small-text"> px</label></div>',
+								'Per allinearlo a un altro pulsante fisso (es. accessibilità) usa le stesse misure e una distanza dal basso che lo metta sopra o sotto.',
+								'mb-gt-dep-custom'
+							);
+							?>
+						</div>
+						<div class="mb-gt-split__side mb-gt-dep-custom">
+							<div class="mb-gt-preview" aria-hidden="true">
+								<span class="mb-gt-preview__label">Anteprima</span>
+								<div class="mb-gt-preview__stage"><span class="mb-gt-preview__btn"></span></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="mb-gt-card">
+					<h2>Pulsanti del banner</h2>
+					<?php mb_gt_row( '<label for="mb-gt-btns-radius">Angoli</label>', '<div class="mb-gt-inline"><input type="number" min="0" max="100" class="small-text" id="mb-gt-btns-radius" name="' . $f( 'btns_radius' ) . '" value="' . esc_attr( $s['btns_radius'] ) . '" placeholder="—"><span>px</span></div>', 'Raggio dei pulsanti Accetta / Rifiuta / Preferenze / Salva, nel banner e nella finestra preferenze. Vuoto = come impostato in GetTerms; 0 = squadrati.' ); ?>
+				</div>
+			</section>
+
+			<!-- POLICY -->
+			<section class="mb-gt-panel" data-panel="policy">
+				<div class="mb-gt-card">
+					<h2>Link alle policy nel banner</h2>
+					<p class="mb-gt-intro">Di default il banner apre le policy sul sito di GetTerms. Scegli le pagine del sito che contengono gli shortcode: i link del banner verranno indirizzati lì.</p>
+					<?php
+					foreach ( array(
+						'policy_cookie_page'  => 'Cookie Policy',
+						'policy_privacy_page' => 'Privacy Policy',
+					) as $key => $label ) {
+						$dropdown = wp_dropdown_pages(
+							array(
+								'name'              => $name . '[' . $key . ']',
+								'id'                => 'mb-gt-' . $key,
+								'selected'          => (int) $s[ $key ],
+								'show_option_none'  => '— Pagina GetTerms (predefinito) —',
+								'option_none_value' => '0',
+								'echo'              => 0,
+								'post_status'       => array( 'publish', 'private' ),
+							)
+						);
+						mb_gt_row( '<label for="mb-gt-' . esc_attr( $key ) . '">' . esc_html( $label ) . '</label>', $dropdown );
+					}
+					?>
+				</div>
+				<div class="mb-gt-card">
+					<h2>Shortcode</h2>
+					<?php if ( ! $s['token'] ) : ?>
+						<p>Collega il token GetTerms per usare le policy.</p>
+					<?php else : ?>
+						<table class="mb-gt-codes">
+							<tr><td>Privacy Policy</td><td><code class="mb-gt-copy">[mb_getterms_policy type="privacy"]</code></td></tr>
+							<tr><td>Cookie Policy</td><td><code class="mb-gt-copy">[mb_getterms_policy type="cookie"]</code></td></tr>
+							<tr><td>Termini e condizioni</td><td><code class="mb-gt-copy">[mb_getterms_policy type="terms"]</code></td></tr>
+						</table>
+						<p class="mb-gt-help">Senza <code>lang</code> usa la lingua del banner; per forzarla: <code>[mb_getterms_policy type="privacy" lang="en"]</code>. Clic sul codice per copiarlo.</p>
+						<?php if ( $policies && $languages ) : ?>
+							<details class="mb-gt-details">
+								<summary>Shortcode compatibili con il plugin ufficiale GetTerms</summary>
+								<table class="widefat striped mb-gt-table">
+									<thead><tr><th>Policy</th><?php foreach ( $languages as $label ) : ?><th><?php echo esc_html( $label ); ?></th><?php endforeach; ?></tr></thead>
+									<tbody>
+										<?php foreach ( $policies as $policy ) : ?>
+											<tr><td><?php echo esc_html( ucfirst( $policy ) ); ?></td>
+												<?php foreach ( array_keys( (array) mb_gt_get( 'languages' ) ) as $lang_key ) : ?>
+													<td><code>[getterms_<?php echo esc_html( $policy . '_' . $lang_key ); ?>]</code></td>
+												<?php endforeach; ?>
+											</tr>
+										<?php endforeach; ?>
+									</tbody>
+								</table>
+							</details>
 						<?php endif; ?>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="mb-gt-embed">In alternativa: embed code</label></th>
-					<td>
-						<textarea id="mb-gt-embed" name="<?php echo esc_attr( $name ); ?>[embed_code]" rows="3" class="large-text code" placeholder="&lt;!-- GetTerms CMP --&gt; ..."></textarea>
-						<p class="description">Se il token non funziona, incolla qui lo snippet di GetTerms &rarr; Installation: il plugin ne ricava UUID e lingua. Le policy via shortcode richiedono comunque il token.</p>
-					</td>
-				</tr>
-			</table>
+					<?php endif; ?>
+				</div>
+			</section>
 
-			<h2>2. Banner</h2>
-			<table class="form-table" role="presentation">
-				<tr>
-					<th scope="row">Attiva sul sito</th>
-					<td>
-						<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[enabled]" value="1" <?php checked( $s['enabled'] ); ?> <?php disabled( ! $connected ); ?>> Stampa il banner GetTerms (e GTM, se attivo) nell'head</label>
-						<p class="description">Prima di attivare: disattiva l'altro CMP (Complianz, Cookiebot, iubenda, plugin ufficiale GetTerms...) e verifica che GTM non sia già inserito altrove.</p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">Lingua del banner</th>
-					<td>
-						<fieldset>
-							<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[lang_mode]" value="fixed" <?php checked( 'fixed', $s['lang_mode'] ); ?>> Lingua fissa</label>
-							<?php if ( $languages ) : ?>
-								<select name="<?php echo esc_attr( $name ); ?>[lang]">
-									<?php foreach ( $languages as $code => $label ) : ?>
-										<option value="<?php echo esc_attr( $code ); ?>" <?php selected( mb_gt_norm_lang( $s['lang'] ? $s['lang'] : $s['default_language'] ), $code ); ?>><?php echo esc_html( $label . ' (' . $code . ')' ); ?></option>
-									<?php endforeach; ?>
-								</select>
-							<?php else : ?>
-								<input type="text" name="<?php echo esc_attr( $name ); ?>[lang]" value="<?php echo esc_attr( $s['lang'] ); ?>" class="small-text code" placeholder="it">
-							<?php endif; ?>
-							<br>
-							<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[lang_mode]" value="site" <?php checked( 'site', $s['lang_mode'] ); ?>> Segui la lingua della pagina (siti multilingua: WPML, Polylang, TranslatePress)</label>
-							<br><br>
-							<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[auto_detect]" value="1" <?php checked( $s['auto_detect'] ); ?>> Rilevamento automatico della lingua del visitatore (<code>?auto=true</code>)</label>
-						</fieldset>
-					</td>
-				</tr>
-			</table>
-
-			<h2>3. Google Tag Manager</h2>
-			<table class="form-table" role="presentation">
-				<tr>
-					<th scope="row">Inserisci GTM</th>
-					<td>
-						<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[gtm_enabled]" value="1" <?php checked( $s['gtm_enabled'] ); ?>> Stampa GTM subito dopo il banner GetTerms</label>
-						<p class="description">Lascia disattivato se GTM è già inserito da tema o da un altro plugin (in quel caso verifica che venga caricato <em>dopo</em> il banner).</p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="mb-gt-gtm">ID container</label></th>
-					<td><input type="text" id="mb-gt-gtm" name="<?php echo esc_attr( $name ); ?>[gtm_id]" value="<?php echo esc_attr( $s['gtm_id'] ); ?>" class="regular-text code" placeholder="GTM-XXXXXXX"></td>
-				</tr>
-				<tr>
-					<th scope="row">Noscript</th>
-					<td><label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[gtm_noscript]" value="1" <?php checked( $s['gtm_noscript'] ); ?>> Aggiungi l'iframe noscript dopo &lt;body&gt; (richiede un tema con <code>wp_body_open</code>)</label></td>
-				</tr>
-			</table>
-
-			<h2>4. Aspetto del banner</h2>
-			<p class="description">Il pulsante preferenze è quello fisso che riapre il banner per cambiare le scelte.</p>
-			<table class="form-table" role="presentation" id="mb-gt-btn">
-				<tr>
-					<th scope="row">Pulsante preferenze</th>
-					<td>
-						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_style]" value="original" <?php checked( 'original', $s['btn_style'] ); ?>> Originale GetTerms</label><br>
-						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_style]" value="custom" <?php checked( 'custom', $s['btn_style'] ); ?>> Personalizzato</label>
-					</td>
-				</tr>
-				<tr class="mb-gt-btn-custom">
-					<th scope="row">Forma</th>
-					<td>
-						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_shape]" value="square" <?php checked( 'square', $s['btn_shape'] ); ?>> Quadrata</label>
-						&nbsp;&nbsp;
-						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_shape]" value="round" <?php checked( 'round', $s['btn_shape'] ); ?>> Tonda</label>
-					</td>
-				</tr>
-				<tr class="mb-gt-btn-custom">
-					<th scope="row">Colori</th>
-					<td>
-						<label>Sfondo <input type="color" name="<?php echo esc_attr( $name ); ?>[btn_bg]" value="<?php echo esc_attr( $s['btn_bg'] ); ?>"></label>
-						&nbsp; <label>Sfondo al passaggio <input type="color" name="<?php echo esc_attr( $name ); ?>[btn_bg_hover]" value="<?php echo esc_attr( $s['btn_bg_hover'] ); ?>"></label>
-						&nbsp; <label>Icona <input type="color" name="<?php echo esc_attr( $name ); ?>[btn_icon]" value="<?php echo esc_attr( $s['btn_icon'] ); ?>"></label>
-					</td>
-				</tr>
-				<tr class="mb-gt-btn-custom">
-					<th scope="row">Dimensione (px)</th>
-					<td>
-						<label>Larghezza <input type="number" min="20" max="120" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_width]" value="<?php echo esc_attr( $s['btn_width'] ); ?>"></label>
-						&nbsp; <label>Altezza <input type="number" min="20" max="120" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_height]" value="<?php echo esc_attr( $s['btn_height'] ); ?>"></label>
-						<p class="description">Con la forma tonda viene usato il lato maggiore per entrambe.</p>
-					</td>
-				</tr>
-				<tr class="mb-gt-btn-custom">
-					<th scope="row">Posizione</th>
-					<td>
-						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_side]" value="left" <?php checked( 'left', $s['btn_side'] ); ?>> Sinistra</label>
-						&nbsp;&nbsp;
-						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_side]" value="right" <?php checked( 'right', $s['btn_side'] ); ?>> Destra</label>
-						<br><br>
-						<label>Distanza dal bordo laterale <input type="number" min="0" max="500" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_offset_x]" value="<?php echo esc_attr( $s['btn_offset_x'] ); ?>"> px</label>
-						&nbsp; <label>Distanza dal basso <input type="number" min="0" max="1000" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_offset_y]" value="<?php echo esc_attr( $s['btn_offset_y'] ); ?>"> px</label>
-						<p class="description">Per allinearlo a un altro pulsante fisso (es. accessibilità OneTap) usa le stesse misure e una distanza dal basso che lo metta sopra o sotto.</p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="mb-gt-btns-radius">Angoli dei pulsanti del banner</label></th>
-					<td>
-						<input type="number" min="0" max="100" class="small-text" id="mb-gt-btns-radius" name="<?php echo esc_attr( $name ); ?>[btns_radius]" value="<?php echo esc_attr( $s['btns_radius'] ); ?>" placeholder="—"> px
-						<p class="description">Raggio degli angoli dei pulsanti "Accetta / Rifiuta / Preferenze / Salva" nel banner e nella finestra preferenze. Vuoto = come impostato in GetTerms; 0 = squadrati.</p>
-					</td>
-				</tr>
-			</table>
-
-			<?php submit_button( 'Salva impostazioni' ); ?>
+			<div class="mb-gt-savebar">
+				<?php submit_button( 'Salva impostazioni', 'primary', 'submit', false ); ?>
+			</div>
 		</form>
 
-		<hr>
-		<h2>Policy (shortcode)</h2>
-		<?php if ( ! $s['token'] ) : ?>
-			<p>Collega il token GetTerms per usare le policy.</p>
-		<?php else : ?>
-			<p>Shortcode generico: <code>[mb_getterms_policy type="privacy"]</code> &middot; <code>[mb_getterms_policy type="cookie"]</code> &middot; <code>[mb_getterms_policy type="terms" lang="en"]</code></p>
-			<?php if ( $policies && $languages ) : ?>
-				<p>Sono attivi anche gli shortcode del plugin ufficiale (compatibili, se il plugin ufficiale è disattivo):</p>
-				<table class="widefat striped mb-gt-table">
-					<thead><tr><th>Policy</th><?php foreach ( $languages as $label ) : ?><th><?php echo esc_html( $label ); ?></th><?php endforeach; ?></tr></thead>
-					<tbody>
-						<?php foreach ( $policies as $policy ) : ?>
-							<tr>
-								<td><?php echo esc_html( ucfirst( $policy ) ); ?></td>
-								<?php foreach ( array_keys( mb_gt_get( 'languages' ) ) as $lang_key ) : ?>
-									<td><code>[getterms_<?php echo esc_html( $policy . '_' . $lang_key ); ?>]</code></td>
-								<?php endforeach; ?>
-							</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-			<?php endif; ?>
-		<?php endif; ?>
-
-		<hr>
-		<h2>Verifica installazione</h2>
-		<p>Scarica la homepage e controlla: banner presente una sola volta e come primo script, GTM presente una sola volta, nessun altro CMP attivo.</p>
-		<p><button type="button" class="button" id="mb-gt-check">Verifica homepage</button></p>
-		<div id="mb-gt-check-result"></div>
-		<p class="description">Il controllo vede la pagina come la serve il server (cache comprese). Dopo modifiche, svuota la cache del sito.</p>
+		<!-- VERIFICA (fuori dal form) -->
+		<section class="mb-gt-panel" data-panel="verifica">
+			<div class="mb-gt-card">
+				<h2>Verifica installazione</h2>
+				<p class="mb-gt-intro">Scarica la homepage e controlla: banner presente una volta e prima degli altri script, GTM presente una volta e dopo il banner, nessun altro CMP attivo.</p>
+				<p><button type="button" class="button button-secondary" id="mb-gt-check">Verifica homepage</button></p>
+				<div id="mb-gt-check-result"></div>
+				<p class="mb-gt-help">Il controllo vede la pagina come la serve il server, cache comprese: dopo una modifica svuota la cache del sito.</p>
+			</div>
+		</section>
 	</div>
 	<?php
 }
