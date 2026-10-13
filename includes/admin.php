@@ -95,6 +95,25 @@ function mb_gt_sanitize_settings( $input ) {
 	$out['gtm_enabled']  = empty( $input['gtm_enabled'] ) ? 0 : 1;
 	$out['gtm_noscript'] = empty( $input['gtm_noscript'] ) ? 0 : 1;
 
+	// Pulsante preferenze cookie.
+	$out['btn_style'] = ( isset( $input['btn_style'] ) && 'custom' === $input['btn_style'] ) ? 'custom' : 'original';
+	$out['btn_shape'] = ( isset( $input['btn_shape'] ) && 'round' === $input['btn_shape'] ) ? 'round' : 'square';
+	$out['btn_side']  = ( isset( $input['btn_side'] ) && 'right' === $input['btn_side'] ) ? 'right' : 'left';
+	foreach ( array( 'btn_bg', 'btn_bg_hover', 'btn_icon' ) as $key ) {
+		$color       = isset( $input[ $key ] ) ? sanitize_hex_color( $input[ $key ] ) : '';
+		$out[ $key ] = $color ? $color : $current[ $key ];
+	}
+	$ranges = array(
+		'btn_width'    => array( 20, 120 ),
+		'btn_height'   => array( 20, 120 ),
+		'btn_offset_x' => array( 0, 500 ),
+		'btn_offset_y' => array( 0, 1000 ),
+	);
+	foreach ( $ranges as $key => $range ) {
+		$val         = isset( $input[ $key ] ) ? (int) $input[ $key ] : (int) $current[ $key ];
+		$out[ $key ] = max( $range[0], min( $range[1], $val ) );
+	}
+
 	$gtm_id = isset( $input['gtm_id'] ) ? strtoupper( trim( sanitize_text_field( $input['gtm_id'] ) ) ) : '';
 	if ( '' !== $gtm_id && ! preg_match( '/^GTM-[A-Z0-9]+$/', $gtm_id ) ) {
 		add_settings_error( MB_GT_OPTION, 'gtm', 'ID GTM non valido: deve avere il formato GTM-XXXXXXX.' );
@@ -387,6 +406,54 @@ function mb_gt_render_settings_page() {
 				<tr>
 					<th scope="row">Noscript</th>
 					<td><label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[gtm_noscript]" value="1" <?php checked( $s['gtm_noscript'] ); ?>> Aggiungi l'iframe noscript dopo &lt;body&gt; (richiede un tema con <code>wp_body_open</code>)</label></td>
+				</tr>
+			</table>
+
+			<h2>4. Pulsante preferenze cookie</h2>
+			<p class="description">È il pulsante fisso che riapre il banner per cambiare le preferenze.</p>
+			<table class="form-table" role="presentation" id="mb-gt-btn">
+				<tr>
+					<th scope="row">Stile</th>
+					<td>
+						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_style]" value="original" <?php checked( 'original', $s['btn_style'] ); ?>> Originale GetTerms</label><br>
+						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_style]" value="custom" <?php checked( 'custom', $s['btn_style'] ); ?>> Personalizzato</label>
+					</td>
+				</tr>
+				<tr class="mb-gt-btn-custom">
+					<th scope="row">Forma</th>
+					<td>
+						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_shape]" value="square" <?php checked( 'square', $s['btn_shape'] ); ?>> Quadrata</label>
+						&nbsp;&nbsp;
+						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_shape]" value="round" <?php checked( 'round', $s['btn_shape'] ); ?>> Tonda</label>
+					</td>
+				</tr>
+				<tr class="mb-gt-btn-custom">
+					<th scope="row">Colori</th>
+					<td>
+						<label>Sfondo <input type="color" name="<?php echo esc_attr( $name ); ?>[btn_bg]" value="<?php echo esc_attr( $s['btn_bg'] ); ?>"></label>
+						&nbsp; <label>Sfondo al passaggio <input type="color" name="<?php echo esc_attr( $name ); ?>[btn_bg_hover]" value="<?php echo esc_attr( $s['btn_bg_hover'] ); ?>"></label>
+						&nbsp; <label>Icona <input type="color" name="<?php echo esc_attr( $name ); ?>[btn_icon]" value="<?php echo esc_attr( $s['btn_icon'] ); ?>"></label>
+					</td>
+				</tr>
+				<tr class="mb-gt-btn-custom">
+					<th scope="row">Dimensione (px)</th>
+					<td>
+						<label>Larghezza <input type="number" min="20" max="120" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_width]" value="<?php echo esc_attr( $s['btn_width'] ); ?>"></label>
+						&nbsp; <label>Altezza <input type="number" min="20" max="120" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_height]" value="<?php echo esc_attr( $s['btn_height'] ); ?>"></label>
+						<p class="description">Con la forma tonda viene usato il lato maggiore per entrambe.</p>
+					</td>
+				</tr>
+				<tr class="mb-gt-btn-custom">
+					<th scope="row">Posizione</th>
+					<td>
+						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_side]" value="left" <?php checked( 'left', $s['btn_side'] ); ?>> Sinistra</label>
+						&nbsp;&nbsp;
+						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_side]" value="right" <?php checked( 'right', $s['btn_side'] ); ?>> Destra</label>
+						<br><br>
+						<label>Distanza dal bordo laterale <input type="number" min="0" max="500" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_offset_x]" value="<?php echo esc_attr( $s['btn_offset_x'] ); ?>"> px</label>
+						&nbsp; <label>Distanza dal basso <input type="number" min="0" max="1000" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_offset_y]" value="<?php echo esc_attr( $s['btn_offset_y'] ); ?>"> px</label>
+						<p class="description">Per allinearlo a un altro pulsante fisso (es. accessibilità OneTap) usa le stesse misure e una distanza dal basso che lo metta sopra o sotto.</p>
+					</td>
 				</tr>
 			</table>
 

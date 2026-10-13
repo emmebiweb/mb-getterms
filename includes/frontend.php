@@ -194,6 +194,71 @@ add_action( 'wp_body_open', 'mb_gt_print_body_open', 0 );
 
 /*
  * ------------------------------------------------------------------
+ * Pulsante "preferenze cookie" personalizzato.
+ * Il widget GetTerms vive in uno Shadow DOM (<cookie-widget-wrapper>) e
+ * ridisegna periodicamente il suo contenuto: il CSS del tema non lo
+ * raggiunge. Iniettiamo uno <style> nello shadow root e lo reinseriamo
+ * ogni volta che il widget lo rimuove. Il pulsante resta quello
+ * originale (stessa funzione e accessibilità), cambia solo l'aspetto.
+ * ------------------------------------------------------------------
+ */
+
+/**
+ * CSS del pulsante personalizzato.
+ *
+ * @return string
+ */
+function mb_gt_reopen_button_css() {
+	$s     = mb_gt_get();
+	$round = 'round' === $s['btn_shape'];
+	$w     = (int) $s['btn_width'];
+	$h     = (int) $s['btn_height'];
+	if ( $round ) {
+		$w = max( $w, $h );
+		$h = $w;
+	}
+	$icon_size = (int) round( min( $w, $h ) * 0.56 );
+	$side      = 'right' === $s['btn_side'] ? 'right' : 'left';
+	$other     = 'right' === $side ? 'left' : 'right';
+	$x         = (int) $s['btn_offset_x'];
+	$y         = (int) $s['btn_offset_y'];
+	$bg        = sanitize_hex_color( $s['btn_bg'] ) ? $s['btn_bg'] : '#003a70';
+	$bg_hover  = sanitize_hex_color( $s['btn_bg_hover'] ) ? $s['btn_bg_hover'] : $bg;
+	$icon_col  = sanitize_hex_color( $s['btn_icon'] ) ? $s['btn_icon'] : '#ffffff';
+	$mask      = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5zm-3.5 7A1.5 1.5 0 1 1 7 10.5 1.5 1.5 0 0 1 8.5 9zm-1 6A1.5 1.5 0 1 1 6 16.5 1.5 1.5 0 0 1 7.5 15zm6 2a1.5 1.5 0 1 1-1.5 1.5 1.5 1.5 0 0 1 1.5-1.5zm3-4a1 1 0 1 1-1 1 1 1 0 0 1 1-1z'/%3E%3C/svg%3E\") center/contain no-repeat";
+
+	return '.gt-cookie-reopen-btn{' . $side . ':' . $x . 'px!important;' . $other . ':auto!important;bottom:' . $y . 'px!important;top:auto!important;'
+		. 'width:' . $w . 'px!important;height:' . $h . 'px!important;min-width:0!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;'
+		. 'border-radius:' . ( $round ? '50%' : '0' ) . '!important;background:' . $bg . '!important;box-shadow:none!important;transform:none!important;'
+		. 'display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer!important;transition:background-color .2s!important}'
+		. '.gt-cookie-reopen-btn svg{display:none!important}'
+		. '.gt-cookie-reopen-btn::before{content:"";display:block;width:' . $icon_size . 'px;height:' . $icon_size . 'px;background:' . $icon_col . ';-webkit-mask:' . $mask . ';mask:' . $mask . '}'
+		. '.gt-cookie-reopen-btn:hover,.gt-cookie-reopen-btn:focus-visible{background:' . $bg_hover . '!important}'
+		. '.gt-cookie-reopen-btn:focus-visible{outline:2px solid ' . $icon_col . '!important;outline-offset:-4px!important}';
+}
+
+/**
+ * Stampa lo script che applica il CSS nello shadow root del widget.
+ */
+function mb_gt_print_reopen_button() {
+	if ( ! mb_gt_should_output() || 'custom' !== mb_gt_get( 'btn_style' ) ) {
+		return;
+	}
+	$css = wp_json_encode( mb_gt_reopen_button_css() );
+	// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
+	echo "<script id=\"mb-gt-reopen-btn\">(function(){var css=" . $css . ",ID='mb-gt-reopen-style';"
+		. "function apply(host){var sr=host&&host.shadowRoot;if(!sr)return false;"
+		. "if(!sr.getElementById(ID)){var st=document.createElement('style');st.id=ID;st.textContent=css;sr.appendChild(st);}"
+		. "if(!host.__mbGtObs){host.__mbGtObs=new MutationObserver(function(){if(!sr.getElementById(ID)){var st=document.createElement('style');st.id=ID;st.textContent=css;sr.appendChild(st);}});host.__mbGtObs.observe(sr,{childList:true});}return true;}"
+		. "function find(){var h=document.querySelector('cookie-widget-wrapper');return h&&apply(h);}"
+		. "if(!find()){var mo=new MutationObserver(function(){if(find())mo.disconnect();});mo.observe(document.documentElement,{childList:true,subtree:true});setTimeout(function(){mo.disconnect();},30000);}"
+		. "})();</script>\n";
+	// phpcs:enable
+}
+add_action( 'wp_footer', 'mb_gt_print_reopen_button', 100 );
+
+/*
+ * ------------------------------------------------------------------
  * Esclusioni per i plugin di ottimizzazione (filtri innocui se il plugin non c'è).
  * ------------------------------------------------------------------
  */

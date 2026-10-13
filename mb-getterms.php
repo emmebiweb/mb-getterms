@@ -3,7 +3,7 @@
  * Plugin Name:       mB GetTerms Consent
  * Plugin URI:        https://github.com/emmebiweb/mb-getterms
  * Description:       Installa il CMP GetTerms (blocker + banner) come primo script dell'head, seguito da Google Tag Manager, più le policy GetTerms via shortcode. Alternativa leggera al plugin ufficiale, pensata per Google Consent Mode gestito in GTM.
- * Version:           1.0.1
+ * Version:           1.1.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            mB
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MB_GT_VERSION', '1.0.1' );
+define( 'MB_GT_VERSION', '1.1.0' );
 define( 'MB_GT_FILE', __FILE__ );
 define( 'MB_GT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MB_GT_URL', plugin_dir_url( __FILE__ ) );
@@ -59,6 +59,17 @@ function mb_gt_defaults() {
 		'gtm_enabled'      => 0,
 		'gtm_id'           => '',
 		'gtm_noscript'     => 1,
+		// Pulsante "preferenze cookie" (riapertura banner).
+		'btn_style'        => 'original', // original | custom.
+		'btn_shape'        => 'square',   // square | round.
+		'btn_bg'           => '#003a70',
+		'btn_bg_hover'     => '#0a1f3d',
+		'btn_icon'         => '#ffffff',
+		'btn_width'        => 40,
+		'btn_height'       => 40,
+		'btn_side'         => 'left',     // left | right.
+		'btn_offset_x'     => 0,
+		'btn_offset_y'     => 20,
 	);
 }
 

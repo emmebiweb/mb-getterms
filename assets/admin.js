@@ -113,4 +113,17 @@
 				.then(function () { checkBtn.disabled = false; });
 		});
 	}
+
+	/* ---------- Pulsante preferenze: mostra le opzioni solo se "personalizzato" ---------- */
+	var btnTable = document.getElementById('mb-gt-btn');
+	if (btnTable) {
+		var toggleRows = function () {
+			var custom = btnTable.querySelector('input[name$="[btn_style]"][value="custom"]');
+			btnTable.querySelectorAll('.mb-gt-btn-custom').forEach(function (row) {
+				row.style.display = custom && custom.checked ? '' : 'none';
+			});
+		};
+		btnTable.addEventListener('change', toggleRows);
+		toggleRows();
+	}
 })();
