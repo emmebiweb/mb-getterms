@@ -114,6 +114,75 @@ add_filter(
 );
 
 /**
+ * Converte il testo Markdown di una release GitHub in HTML semplice e sicuro
+ * (titoli, elenchi puntati, grassetto, corsivo, codice, link, paragrafi).
+ *
+ * @param string $md Testo Markdown.
+ * @return string HTML.
+ */
+function mb_gt_markdown_to_html( $md ) {
+	$md = str_replace( array( "\r\n", "\r" ), "\n", trim( (string) $md ) );
+	if ( '' === $md ) {
+		return '<p>Nessuna nota per questa versione.</p>';
+	}
+	$inline = function ( $text ) {
+		$text = esc_html( $text );
+		$text = preg_replace( '/`([^`]+)`/', '<code>$1</code>', $text );
+		$text = preg_replace( '/\*\*([^*]+)\*\*/', '<strong>$1</strong>', $text );
+		$text = preg_replace( '/(?<![*\w])\*([^*]+)\*(?![*\w])/', '<em>$1</em>', $text );
+		$text = preg_replace_callback(
+			'/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/',
+			function ( $m ) {
+				return '<a href="' . esc_url( html_entity_decode( $m[2] ) ) . '" target="_blank" rel="noopener">' . $m[1] . '</a>';
+			},
+			$text
+		);
+		// URL nudi (es. "Full Changelog" di GitHub).
+		$text = preg_replace( '#(?<!href=")(https?://[^\s<]+)#', '<a href="$1" target="_blank" rel="noopener">$1</a>', $text );
+		return $text;
+	};
+
+	$html  = '';
+	$list  = false;
+	$para  = array();
+	$flush = function () use ( &$para, &$html ) {
+		if ( $para ) {
+			$html .= '<p>' . implode( '<br>', $para ) . '</p>';
+			$para  = array();
+		}
+	};
+	foreach ( explode( "\n", $md ) as $line ) {
+		$t = trim( $line );
+		if ( preg_match( '/^[-*+]\s+(.*)$/', $t, $m ) ) {
+			$flush();
+			if ( ! $list ) {
+				$html .= '<ul>';
+				$list  = true;
+			}
+			$html .= '<li>' . $inline( $m[1] ) . '</li>';
+			continue;
+		}
+		if ( $list ) {
+			$html .= '</ul>';
+			$list  = false;
+		}
+		if ( '' === $t ) {
+			$flush();
+		} elseif ( preg_match( '/^(#{1,6})\s+(.*)$/', $t, $m ) ) {
+			$flush();
+			$html .= '<h4>' . $inline( $m[2] ) . '</h4>';
+		} else {
+			$para[] = $inline( $t );
+		}
+	}
+	if ( $list ) {
+		$html .= '</ul>';
+	}
+	$flush();
+	return $html;
+}
+
+/**
  * Popup "Visualizza dettagli" nella pagina Plugin.
  */
 add_filter(
@@ -137,7 +206,7 @@ add_filter(
 			'last_updated'  => $release['published'],
 			'download_link' => $release['package'],
 			'sections'      => array(
-				'changelog' => '<pre>' . esc_html( $release['body'] ) . '</pre>',
+				'changelog' => mb_gt_markdown_to_html( $release['body'] ),
 			),
 		);
 	},
