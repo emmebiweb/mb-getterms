@@ -162,8 +162,10 @@ function mb_gt_gtm_head_markup() {
 }
 
 /**
- * Stampa CMP + GTM in testa all'head, prima di qualsiasi altro script
- * accodato da WordPress (priorità molto bassa = esecuzione anticipata).
+ * Stampa CMP + GTM in testa all'head con la priorità più bassa possibile
+ * (PHP_INT_MIN), prima di ogni altro output agganciato a wp_head
+ * (es. lo script inline di Gravity Forms). Restano sopra solo gli script
+ * scritti dal tema in header.php prima di wp_head().
  */
 function mb_gt_print_head() {
 	if ( ! mb_gt_should_output() ) {
@@ -173,7 +175,7 @@ function mb_gt_print_head() {
 	echo mb_gt_cmp_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	echo mb_gt_gtm_head_markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
-add_action( 'wp_head', 'mb_gt_print_head', -9999 );
+add_action( 'wp_head', 'mb_gt_print_head', PHP_INT_MIN );
 
 /**
  * Noscript GTM subito dopo l'apertura del body (temi che supportano wp_body_open).

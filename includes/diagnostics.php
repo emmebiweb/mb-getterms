@@ -131,11 +131,34 @@ add_action(
 		// Il blocker è il primo script dell'head?
 		$head_end = stripos( $html, '</head>' );
 		$head     = false === $head_end ? $html : substr( $html, 0, $head_end );
-		if ( $blockers && preg_match( '#<script\b[^>]*>#i', $head, $first, PREG_OFFSET_CAPTURE ) ) {
-			if ( false !== stripos( $first[0][0], 'gettermscmp.com/cookie-consent/blocker/' ) ) {
-				$add( 'ok', 'Il blocker GetTerms è il primo script dell\'head.' );
+		$pos_b    = stripos( $head, 'gettermscmp.com/cookie-consent/blocker/' );
+		if ( $blockers && false !== $pos_b ) {
+			// Tutti i tag <script> che aprono prima del blocker.
+			preg_match_all( '#<script\b[^>]*>#i', substr( $head, 0, $pos_b ), $before, PREG_OFFSET_CAPTURE );
+			$before   = $before[0];
+			// L'ultimo è il tag del blocker stesso se l'attributo src è dentro quel tag.
+			if ( $before ) {
+				$last = end( $before );
+				if ( false === strpos( substr( $head, $last[1], $pos_b - $last[1] ), '>' ) ) {
+					array_pop( $before );
+				}
+			}
+			$external = array();
+			$inline   = array();
+			foreach ( $before as $tag ) {
+				$snippet = trim( preg_replace( '/\s+/', ' ', substr( $head, $tag[1], 140 ) ) );
+				if ( preg_match( '#\ssrc\s*=#i', $tag[0] ) ) {
+					$external[] = $snippet;
+				} elseif ( ! preg_match( '#type\s*=\s*["\']?(application/(ld\+)?json|text/template|text/x-template)#i', $tag[0] ) ) {
+					$inline[] = $snippet;
+				}
+			}
+			if ( $external ) {
+				$add( 'error', 'Il blocker NON è il primo script: prima ci sono ' . count( $external ) . ' script esterni. Primo: ' . $external[0] );
+			} elseif ( $inline ) {
+				$add( 'warn', 'Prima del blocker ci sono ' . count( $inline ) . ' script inline (di solito innocui: non caricano risorse esterne). Primo: ' . $inline[0] );
 			} else {
-				$add( 'error', 'Il blocker NON è il primo script. Primo script trovato: ' . trim( preg_replace( '/\s+/', ' ', substr( $head, $first[0][1], 160 ) ) ) );
+				$add( 'ok', 'Il blocker GetTerms è il primo script dell\'head.' );
 			}
 		}
 
@@ -159,24 +182,25 @@ add_action(
 			$add( 'warn', 'Trovato un gtag.js diretto (GA4/Ads fuori da GTM): va spostato in GTM o lasciato al Consent Mode.' );
 		}
 
-		// Altri CMP nell'HTML.
+		// Altri CMP attivi: cerca solo dentro i tag <script> (src o contenuto),
+		// così testi, immagini o CSS che citano il nome di un CMP non contano.
 		$signatures = array(
-			'complianz'        => 'Complianz',
-			'cmplz'            => 'Complianz',
-			'cookiebot'        => 'Cookiebot',
-			'cookieyes'        => 'CookieYes',
-			'iubenda'          => 'iubenda',
-			'borlabs'          => 'Borlabs',
-			'cookie-law-info'  => 'CookieYes (legacy)',
-			'realcookiebanner' => 'Real Cookie Banner',
+			'#complianz[^"\'\s]*\.js|var\s+complianz\s*=|cmplz-cookiebanner#i' => 'Complianz',
+			'#consent(cdn)?\.cookiebot\.(com|eu)#i'                                => 'Cookiebot',
+			'#cdn-cookieyes\.com|cookie-law-info[^"\'\s]*\.js#i'                     => 'CookieYes',
+			'#(cdn|cs)\.iubenda\.com|_iub\s*=#i'                                      => 'iubenda',
+			'#borlabs-cookie[^"\'\s]*\.js|BorlabsCookie#i'                            => 'Borlabs Cookie',
+			'#real-cookie-banner[^"\'\s]*\.js|realCookieBanner#i'                     => 'Real Cookie Banner',
 		);
-		$found = array();
-		foreach ( $signatures as $needle => $label ) {
-			if ( false !== stripos( $html, $needle ) ) {
+		preg_match_all( '#<script\b[^>]*>.*?</script>#is', $html, $scripts );
+		$scripts = implode( "\n", $scripts[0] );
+		$found   = array();
+		foreach ( $signatures as $pattern => $label ) {
+			if ( preg_match( $pattern, $scripts ) ) {
 				$found[ $label ] = $label;
 			}
 		}
-		$add( $found ? 'error' : 'ok', $found ? 'Tracce di altri CMP nella pagina: ' . implode( ', ', $found ) . '.' : 'Nessun altro CMP rilevato nella pagina.' );
+		$add( $found ? 'error' : 'ok', $found ? 'Script di altri CMP attivi nella pagina: ' . implode( ', ', $found ) . '.' : 'Nessun altro CMP attivo nella pagina.' );
 
 		foreach ( mb_gt_detect_conflicts() as $msg ) {
 			$add( 'warn', $msg );
