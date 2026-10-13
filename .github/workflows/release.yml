@@ -1,0 +1,39 @@
+name: Release
+
+# Crea la release con lo zip installabile quando si pusha un tag vX.Y.Z.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Controlla che la versione nel plugin corrisponda al tag
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          HEADER=$(grep -m1 -E '^\s*\*\s*Version:' mb-getterms.php | awk '{print $NF}')
+          CONST=$(grep -m1 "MB_GT_VERSION'" mb-getterms.php | sed -E "s/.*'([0-9.]+)'.*/\1/")
+          echo "tag=$TAG header=$HEADER const=$CONST"
+          if [ "$TAG" != "$HEADER" ] || [ "$TAG" != "$CONST" ]; then
+            echo "::error::Versione non allineata: tag $TAG, header $HEADER, costante $CONST"
+            exit 1
+          fi
+
+      - name: Crea mb-getterms.zip
+        run: |
+          mkdir -p build/mb-getterms
+          rsync -a --exclude='.git' --exclude='.github' --exclude='build' --exclude='.DS_Store' --exclude='README.md' ./ build/mb-getterms/
+          cd build && zip -rq mb-getterms.zip mb-getterms
+
+      - name: Pubblica la release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/mb-getterms.zip
+          generate_release_notes: true

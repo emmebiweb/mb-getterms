@@ -1,0 +1,21 @@
+.mb-gt .mb-gt-version { font-size: 13px; color: #646970; font-weight: 400; }
+.mb-gt-status { margin: 16px 0; padding: 12px 14px; border-left: 4px solid; background: #fff; }
+.mb-gt-status.is-on { border-color: #00a32a; }
+.mb-gt-status.is-off { border-color: #dba617; }
+.mb-gt-ok { color: #1d2327; }
+.mb-gt-msg { padding: 6px 10px; border-radius: 3px; display: inline-block; }
+.mb-gt-msg.is-info { background: #f0f6fc; }
+.mb-gt-msg.is-ok { background: #edfaef; }
+.mb-gt-msg.is-error { background: #fcf0f1; color: #8a2424; }
+.mb-gt-table { max-width: 900px; }
+.mb-gt-table code { font-size: 12px; }
+.mb-gt-checks { margin: 0; max-width: 900px; }
+.mb-gt-checks li { padding: 6px 10px 6px 30px; position: relative; background: #fff; margin: 0 0 4px; border-left: 4px solid #c3c4c7; }
+.mb-gt-checks li::before { position: absolute; left: 9px; font-weight: 700; }
+.mb-gt-checks li.is-ok { border-color: #00a32a; }
+.mb-gt-checks li.is-ok::before { content: "✓"; color: #00a32a; }
+.mb-gt-checks li.is-warn { border-color: #dba617; }
+.mb-gt-checks li.is-warn::before { content: "!"; color: #996800; }
+.mb-gt-checks li.is-error { border-color: #d63638; }
+.mb-gt-checks li.is-error::before { content: "✕"; color: #d63638; }
+.mb-gt-checks li.is-info::before { content: "i"; color: #2271b1; }
