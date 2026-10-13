@@ -1,10 +1,14 @@
 name: Release
 
-# Crea la release con lo zip installabile quando si pusha un tag vX.Y.Z.
+# Crea lo zip installabile e lo allega alla release quando:
+# - si pusha un tag vX.Y.Z, oppure
+# - si pubblica una release dal sito di GitHub (Releases > Draft a new release, tag vX.Y.Z).
 on:
   push:
     tags:
       - 'v*'
+  release:
+    types: [published]
 
 permissions:
   contents: write
@@ -35,5 +39,6 @@ jobs:
       - name: Pubblica la release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: build/mb-getterms.zip
           generate_release_notes: true
