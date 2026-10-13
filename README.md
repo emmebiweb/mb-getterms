@@ -49,9 +49,9 @@ Finché non spunti **Attiva sul sito**, il plugin non stampa nulla: puoi configu
 
 1. Aggiorna la versione in `mb-getterms.php`, in **due** punti: l'header `Version:` e la costante `MB_GT_VERSION`.
 2. Esegui commit e push.
-3. Pubblica la release, in uno dei due modi:
-   - **dal sito GitHub:** Releases → *Draft a new release* → tag `v1.0.1` (nuovo) → *Publish release*;
-   - **da terminale:** `git tag v1.0.1 && git push origin v1.0.1`.
+3. Pubblica la release **dal sito GitHub**: Releases → *Draft a new release* → tag `v1.0.1` (nuovo) → *Publish release*.
+   Non serve creare il tag a mano: la release lo crea da sola. La GitHub Action parte una sola volta alla pubblicazione.
+   Se lo zip non compare, vai su Actions → Release → *Run workflow*, inserisci il tag e rilancia.
 4. La GitHub Action controlla che le versioni coincidano, crea `mb-getterms.zip` e pubblica la release.
 5. Entro 6 ore, oppure con *Bacheca → Aggiornamenti → Controlla di nuovo*, i siti mostrano l'aggiornamento.
 
