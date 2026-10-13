@@ -181,3 +181,52 @@ add_filter(
 	10,
 	4
 );
+
+/*
+ * ------------------------------------------------------------------
+ * Resta attivo dopo l'aggiornamento.
+ * Durante l'aggiornamento WordPress disattiva il plugin prima di sostituire
+ * i file e non sempre lo riattiva (dipende da come si avvia l'aggiornamento).
+ * Per un CMP restare spento significa sito senza banner e senza GTM: qui
+ * ricordiamo lo stato prima dell'installazione e, se serve, lo ripristiniamo
+ * alla fine. Aggiorniamo solo l'opzione active_plugins (senza includere di
+ * nuovo il file, che in questa richiesta è già caricato nella versione vecchia).
+ * ------------------------------------------------------------------
+ */
+add_filter(
+	'upgrader_pre_install',
+	function ( $response, $hook_extra ) {
+		if ( ! empty( $hook_extra['plugin'] ) && MB_GT_BASENAME === $hook_extra['plugin'] ) {
+			if ( ! function_exists( 'is_plugin_active' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+			if ( is_plugin_active( MB_GT_BASENAME ) && ! is_plugin_active_for_network( MB_GT_BASENAME ) ) {
+				$GLOBALS['mb_gt_was_active'] = true;
+			}
+		}
+		return $response;
+	},
+	5, // Prima della disattivazione di WordPress (priorità 10).
+	2
+);
+
+add_action(
+	'upgrader_process_complete',
+	function ( $upgrader, $data ) {
+		if ( empty( $GLOBALS['mb_gt_was_active'] ) || ( isset( $data['type'] ) && 'plugin' !== $data['type'] ) ) {
+			return;
+		}
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		if ( is_plugin_active( MB_GT_BASENAME ) || ! file_exists( WP_PLUGIN_DIR . '/' . MB_GT_BASENAME ) ) {
+			return;
+		}
+		$active   = (array) get_option( 'active_plugins', array() );
+		$active[] = MB_GT_BASENAME;
+		update_option( 'active_plugins', array_values( array_unique( $active ) ) );
+		unset( $GLOBALS['mb_gt_was_active'] );
+	},
+	10,
+	2
+);

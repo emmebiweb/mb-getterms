@@ -238,13 +238,36 @@ function mb_gt_reopen_button_css() {
 }
 
 /**
+ * CSS complessivo da iniettare nel widget (vuoto = nessuna personalizzazione).
+ *
+ * @return string
+ */
+function mb_gt_widget_css() {
+	$css = '';
+	if ( 'custom' === mb_gt_get( 'btn_style' ) ) {
+		$css .= mb_gt_reopen_button_css();
+	}
+	$radius = mb_gt_get( 'btns_radius' );
+	if ( '' !== $radius && null !== $radius ) {
+		$r    = max( 0, min( 100, (int) $radius ) ) . 'px';
+		$css .= '.gt-cookie-widget .gt-cookie-widget__button,.gt-cookie-widget .gt-cookie-widget__button__pill-button,'
+			. '.gt-cookie-dialog .gt-cookie-dialog__button,.gt-cookie-dialog .gt-cookie-dialog__button--pill{border-radius:' . $r . '!important}';
+	}
+	return (string) apply_filters( 'mb_gt_widget_css', $css );
+}
+
+/**
  * Stampa lo script che applica il CSS nello shadow root del widget.
  */
 function mb_gt_print_reopen_button() {
-	if ( ! mb_gt_should_output() || 'custom' !== mb_gt_get( 'btn_style' ) ) {
+	if ( ! mb_gt_should_output() ) {
 		return;
 	}
-	$css = wp_json_encode( mb_gt_reopen_button_css() );
+	$css = mb_gt_widget_css();
+	if ( '' === $css ) {
+		return;
+	}
+	$css = wp_json_encode( $css );
 	// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript
 	echo "<script id=\"mb-gt-reopen-btn\">(function(){var css=" . $css . ",ID='mb-gt-reopen-style';"
 		. "function apply(host){var sr=host&&host.shadowRoot;if(!sr)return false;"

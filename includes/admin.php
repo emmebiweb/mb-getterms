@@ -109,6 +109,9 @@ function mb_gt_sanitize_settings( $input ) {
 		'btn_offset_x' => array( 0, 500 ),
 		'btn_offset_y' => array( 0, 1000 ),
 	);
+	$radius             = isset( $input['btns_radius'] ) ? trim( (string) $input['btns_radius'] ) : (string) $current['btns_radius'];
+	$out['btns_radius'] = ( '' === $radius ) ? '' : max( 0, min( 100, (int) $radius ) );
+
 	foreach ( $ranges as $key => $range ) {
 		$val         = isset( $input[ $key ] ) ? (int) $input[ $key ] : (int) $current[ $key ];
 		$out[ $key ] = max( $range[0], min( $range[1], $val ) );
@@ -409,11 +412,11 @@ function mb_gt_render_settings_page() {
 				</tr>
 			</table>
 
-			<h2>4. Pulsante preferenze cookie</h2>
-			<p class="description">È il pulsante fisso che riapre il banner per cambiare le preferenze.</p>
+			<h2>4. Aspetto del banner</h2>
+			<p class="description">Il pulsante preferenze è quello fisso che riapre il banner per cambiare le scelte.</p>
 			<table class="form-table" role="presentation" id="mb-gt-btn">
 				<tr>
-					<th scope="row">Stile</th>
+					<th scope="row">Pulsante preferenze</th>
 					<td>
 						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_style]" value="original" <?php checked( 'original', $s['btn_style'] ); ?>> Originale GetTerms</label><br>
 						<label><input type="radio" name="<?php echo esc_attr( $name ); ?>[btn_style]" value="custom" <?php checked( 'custom', $s['btn_style'] ); ?>> Personalizzato</label>
@@ -453,6 +456,13 @@ function mb_gt_render_settings_page() {
 						<label>Distanza dal bordo laterale <input type="number" min="0" max="500" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_offset_x]" value="<?php echo esc_attr( $s['btn_offset_x'] ); ?>"> px</label>
 						&nbsp; <label>Distanza dal basso <input type="number" min="0" max="1000" class="small-text" name="<?php echo esc_attr( $name ); ?>[btn_offset_y]" value="<?php echo esc_attr( $s['btn_offset_y'] ); ?>"> px</label>
 						<p class="description">Per allinearlo a un altro pulsante fisso (es. accessibilità OneTap) usa le stesse misure e una distanza dal basso che lo metta sopra o sotto.</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="mb-gt-btns-radius">Angoli dei pulsanti del banner</label></th>
+					<td>
+						<input type="number" min="0" max="100" class="small-text" id="mb-gt-btns-radius" name="<?php echo esc_attr( $name ); ?>[btns_radius]" value="<?php echo esc_attr( $s['btns_radius'] ); ?>" placeholder="—"> px
+						<p class="description">Raggio degli angoli dei pulsanti "Accetta / Rifiuta / Preferenze / Salva" nel banner e nella finestra preferenze. Vuoto = come impostato in GetTerms; 0 = squadrati.</p>
 					</td>
 				</tr>
 			</table>

@@ -70,6 +70,8 @@ function mb_gt_defaults() {
 		'btn_side'         => 'left',     // left | right.
 		'btn_offset_x'     => 0,
 		'btn_offset_y'     => 20,
+		// Raggio angoli dei pulsanti nel banner e nella finestra preferenze ('' = originale).
+		'btns_radius'      => '',
 	);
 }
 
