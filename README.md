@@ -50,6 +50,15 @@ Finché non spunti **Attiva sul sito**, il plugin non stampa nulla: puoi configu
   - *Tag firing options*: Once per page.
 - **Tag non-Google** (Clarity, Meta Pixel, LinkedIn, Hotjar...): *Require additional consent for tag to fire*, con le stesse modalità di attivazione.
 
+## Template GTM
+
+Nella cartella [`gtm-templates`](gtm-templates) ci sono due container pronti da importare in GTM (Amministrazione → Importa container → *Unisci* → *Rinomina in conflitto*):
+
+- `mB-GTM-Template-SitoWeb.json`: GetTerms Consent Mode, GA4, Google Ads, Meta, Gravity Forms (4 slot), click su telefono, email e WhatsApp;
+- `mB-GTM-Template-Ecommerce.json`: come sopra, più l'e-commerce WooCommerce via GTM4WP (eventi GA4, conversione Ads Acquisto con conversioni avanzate, eventi Meta).
+
+Si compilano solo le costanti della cartella **01 ⚙️ Configurazione**; `-` = spento. Dettagli in [`gtm-templates/LEGGIMI.md`](gtm-templates/LEGGIMI.md). I file sono inclusi anche nel plugin e si scaricano da Impostazioni → GetTerms (mB) → scheda Google Tag Manager.
+
 ## Rilasciare una nuova versione
 
 1. Aggiorna la versione in `mb-getterms.php`, in **due** punti: l'header `Version:` e la costante `MB_GT_VERSION`.

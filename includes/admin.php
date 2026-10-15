@@ -221,6 +221,47 @@ function mb_gt_store_api_data( array $data ) {
 }
 
 /**
+ * Template GTM inclusi nel plugin (cartella gtm-templates).
+ *
+ * @return array slug => [ file, label ]
+ */
+function mb_gt_gtm_templates() {
+	return array(
+		'sitoweb'   => array( 'mB-GTM-Template-SitoWeb.json', 'Sito web' ),
+		'ecommerce' => array( 'mB-GTM-Template-Ecommerce.json', 'Sito web + E-commerce (GTM4WP)' ),
+		'guida'     => array( 'LEGGIMI.md', 'Guida (LEGGIMI.md)' ),
+	);
+}
+
+/**
+ * Download di un template GTM (forza il salvataggio del file).
+ */
+add_action(
+	'admin_post_mb_gt_gtm_template',
+	function () {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Permessi insufficienti.', 403 );
+		}
+		check_admin_referer( 'mb_gt_gtm_template' );
+		$slug = isset( $_GET['tpl'] ) ? sanitize_key( wp_unslash( $_GET['tpl'] ) ) : '';
+		$list = mb_gt_gtm_templates();
+		if ( ! isset( $list[ $slug ] ) ) {
+			wp_die( 'Template non trovato.', 404 );
+		}
+		$file = MB_GT_DIR . 'gtm-templates/' . $list[ $slug ][0];
+		if ( ! is_readable( $file ) ) {
+			wp_die( 'File non presente nel plugin.', 404 );
+		}
+		nocache_headers();
+		header( 'Content-Type: ' . ( '.md' === substr( $file, -3 ) ? 'text/markdown' : 'application/json' ) . '; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . basename( $file ) . '"' );
+		header( 'Content-Length: ' . filesize( $file ) );
+		readfile( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		exit;
+	}
+);
+
+/**
  * AJAX: salva i dati ottenuti dal browser.
  */
 add_action(
@@ -460,6 +501,19 @@ function mb_gt_render_settings_page() {
 						<li>Google tag / GA4: <em>No additional consent required</em>, trigger <em>Initialization – All Pages</em>.</li>
 						<li>Tag non Google (Clarity, Meta, Hotjar…): <em>Require additional consent</em>.</li>
 					</ul>
+				</div>
+				<div class="mb-gt-card">
+					<h2>Template GTM pronti</h2>
+					<p class="mb-gt-intro">Container già configurato con GetTerms Consent Mode, GA4, Google Ads, Meta e i form Gravity Forms. Si importa in GTM (Amministrazione → Importa container → <em>Unisci</em>) e si compilano solo le costanti della cartella <strong>01 ⚙️ Configurazione</strong>; <code>-</code> = spento.</p>
+					<ul class="mb-gt-list">
+						<?php
+						foreach ( mb_gt_gtm_templates() as $slug => $tpl ) {
+							$url = wp_nonce_url( admin_url( 'admin-post.php?action=mb_gt_gtm_template&tpl=' . $slug ), 'mb_gt_gtm_template' );
+							echo '<li><a href="' . esc_url( $url ) . '">' . esc_html( $tpl[1] ) . '</a> <span class="mb-gt-meta">' . esc_html( $tpl[0] ) . '</span></li>';
+						}
+						?>
+					</ul>
+					<p class="mb-gt-help">Versione inclusa in questo plugin. L'ultima versione è sempre su <a href="https://github.com/<?php echo esc_attr( MB_GT_GITHUB_REPO ); ?>/tree/main/gtm-templates" target="_blank" rel="noopener">GitHub</a>.</p>
 				</div>
 			</section>
 

@@ -1,0 +1,64 @@
+# Template GTM mB – Guida rapida (v1.0)
+
+Due file:
+- **mB-GTM-Template-SitoWeb.json**: sito vetrina (form, click, GA4, Ads, Meta)
+- **mB-GTM-Template-Ecommerce.json**: come sopra + e-commerce WooCommerce (richiede il plugin **GTM4WP** con l'integrazione WooCommerce attiva)
+
+Il consenso è gestito da GetTerms. Il banner lo installa il plugin WordPress **mB GetTerms Consent**, quindi nel tag GTM non va inserito nessun ID.
+
+## Import
+1. GTM → Amministrazione → **Importa container** → scegli il file.
+2. Area di lavoro: **nuova** (es. "Template mB").
+3. Opzione: **Unisci** → **Rinomina tag, trigger e variabili in conflitto**.
+   Su un container vuoto puoi usare **Sovrascrivi**.
+4. Elimina dal container gli eventuali vecchi tag duplicati: GA4, Ads, Complianz, Meta.
+5. Amministrazione → Impostazioni container → attiva **Panoramica consenso**.
+
+## Configurazione: solo cartella "01 ⚙️ Configurazione"
+Un trattino `-` spegne i tag che usano quella costante.
+
+| Costante | Cosa inserire |
+|---|---|
+| CFG - GA4 ID | `G-XXXXXXX` |
+| CFG - Ads ID | solo il numero, es. `16481231912` (anche `AW-…` va bene) |
+| CFG - Ads label Telefono / Email / WhatsApp | etichetta conversione, oppure `-` |
+| CFG - Ads label Form (predefinita) | etichetta usata dai form con valore `predefinita` |
+| CFG - Form 1…4 ID | numero del form Gravity Forms, oppure `-` |
+| CFG - Form 1…4 evento | nome evento GA4 (es. `form_contatti`, `form_preventivo`) |
+| CFG - Form 1…4 Ads label | `predefinita`, un'etichetta propria, oppure `-` (nessuna conversione Ads) |
+| CFG - Meta Pixel ID | ID pixel, oppure `-` |
+| CFG - Ads label Acquisto *(e-commerce)* | etichetta conversione acquisto, oppure `-` |
+
+## Cosa traccia
+- **Form Gravity Forms**:
+  - un solo trigger sul messaggio di conferma `#gform_confirmation_message_N`;
+  - funziona con conferma di tipo **Testo** e invio AJAX, non con il reindirizzamento a una pagina;
+  - i form non mappati inviano a GA4 l'evento `form_inviato` con il parametro `form_id`, senza conversione Ads.
+- **Click**:
+  - `click_telefono` (tel:);
+  - `click_email` (mailto:);
+  - `click_whatsapp` (wa.me, api/web.whatsapp.com, whatsapp://).
+- **Google Ads**:
+  - Google tag AW, con remarketing incluso;
+  - linker conversioni;
+  - conversioni per telefono, email, WhatsApp e form.
+- **Meta**: PageView, Contact (sui click) e Lead (sui form). Partono solo con `ad_storage` concesso.
+- **E-commerce**:
+  - tutti gli eventi GA4 standard dal dataLayer di GTM4WP;
+  - conversione Ads Acquisto con valore, valuta, ID ordine e conversioni avanzate (email e telefono hashati da GTM4WP);
+  - Meta ViewContent, AddToCart, InitiateCheckout, AddPaymentInfo e Purchase.
+
+## Consenso
+- I tag Google partono in **modalità avanzata** di Consent Mode: senza consenso inviano ping anonimi per la modellazione e si aggiornano da soli quando l'utente accetta.
+- Meta richiede `ad_storage`.
+
+## In Google Ads (consigliato)
+- **Conversioni principali**: Form e Telefono, più Acquisto per gli e-commerce.
+- **Conversioni secondarie**: Email e WhatsApp.
+
+## Verifica prima di pubblicare
+Usa l'Anteprima (Tag Assistant):
+1. **Senza scelta nel banner**: i tag Google partono con lo stato *denied* e i tag Meta risultano bloccati dal consenso.
+2. **Dopo "Accetta"**: tutto è *granted*.
+3. Invia ogni form mappato e verifica l'evento GA4 e la conversione Ads.
+4. **Solo e-commerce**: aggiungi un prodotto al carrello e completa un ordine di test.
