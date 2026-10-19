@@ -107,6 +107,8 @@ Entrambe includono:
 - **Niente Meta o Google Ads**: toglili da Cookie Management e dai servizi di terze parti della Privacy.
 - **Niente newsletter**: togli il servizio newsletter, la finalità "Email newsletters" e la voce GDPR "raccogliamo email per marketing".
 - **Politica di reso**: GetTerms genera la frase "attendere *almeno* N giorni affinché il reso sia processato". Il Codice del Consumo invece prevede il rimborso **entro 14 giorni** dal recesso: correggi la frase in *Custom Content*.
+- **Acceptable Use**: serve solo se gli utenti hanno un account, pubblicano contenuti o caricano file (area clienti, forum, piattaforma). Per un sito vetrina eliminala (*Delete Policy*) e poi premi **Collega / Sincronizza** nel plugin mB. Le regole d'uso essenziali sono già nei Termini.
+- **Termini di servizio**: pubblicali nella pagina o scheda "Note legali", sotto i dati aziendali, con lo shortcode `[mb_getterms_policy type="terms"]`. Contengono anche la clausola sull'intelligenza artificiale.
 - **Banner**: nel plugin mB, scheda **Policy**, scegli le pagine del sito per i link del banner.
-- **Pulsante preferenze** (plugin mB, scheda Aspetto): *Personalizzato*, quadrato 40×40, colore del brand, lato destro, 90 px dal basso, così resta sopra la barra di navigazione su mobile.
+- **Pulsante preferenze** (plugin mB, scheda Aspetto): *Personalizzato*, quadrato 40×40, colore del brand, lato sinistro, 90 px dal basso, così resta sopra la barra di navigazione su mobile.
 - **Pulsante WhatsApp o chat in basso a sinistra**: alzalo sopra il banner con un CSS aggiuntivo (Aspetto → Personalizza → CSS aggiuntivo), ad es. `bottom:220px` su desktop e `250px` su mobile. In alternativa usa *Distanza dal basso* nel plugin per alzare il banner.
