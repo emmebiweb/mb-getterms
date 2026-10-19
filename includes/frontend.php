@@ -376,6 +376,22 @@ function mb_gt_enqueue_document_embed() {
 }
 
 /**
+ * Rete di sicurezza: se la policy arriva da contenuto in cache (es. cache dei widget di
+ * Elementor, schede, template) lo shortcode non viene eseguito e embed.js non viene accodato.
+ * In quel caso lo carichiamo in footer solo se nella pagina c'è un embed GetTerms.
+ */
+add_action(
+	'wp_footer',
+	function () {
+		if ( is_admin() || wp_script_is( 'mb-gt-embed', 'done' ) || wp_script_is( 'mb-gt-embed', 'enqueued' ) ) {
+			return;
+		}
+		echo '<script id="mb-gt-embed-loader" data-no-optimize="1" data-cfasync="false">(function(){if(!document.querySelector(".getterms-document-embed")){return;}var s=document.createElement("script");s.src="https://gettermscdn.com/dist/js/embed.js";s.async=true;document.body.appendChild(s);})();</script>' . "\n";
+	},
+	999
+);
+
+/**
  * Markup di una policy.
  *
  * @param string $policy privacy | cookie(s) | terms | tos | aup | ...
