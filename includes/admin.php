@@ -250,15 +250,35 @@ add_action(
 		if ( ! isset( $list[ $slug ] ) ) {
 			wp_die( 'Template non trovato.', 404 );
 		}
-		$file = MB_GT_DIR . 'gtm-templates/' . $list[ $slug ][0];
-		if ( ! is_readable( $file ) ) {
-			wp_die( 'File non presente nel plugin.', 404 );
+		$name = $list[ $slug ][0];
+
+		// Prima l'ultima versione su GitHub (ramo main), anche se il plugin non è aggiornato.
+		$body     = '';
+		$response = wp_remote_get(
+			'https://raw.githubusercontent.com/' . MB_GT_GITHUB_REPO . '/main/gtm-templates/' . rawurlencode( $name ),
+			array( 'timeout' => 15 )
+		);
+		if ( ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) ) {
+			$body = (string) wp_remote_retrieve_body( $response );
+			if ( '.json' === substr( $name, -5 ) && null === json_decode( $body ) ) {
+				$body = ''; // JSON non valido: usa la copia inclusa.
+			}
 		}
+
+		// In mancanza di rete, la copia inclusa nel plugin.
+		if ( '' === $body ) {
+			$file = MB_GT_DIR . 'gtm-templates/' . $name;
+			if ( ! is_readable( $file ) ) {
+				wp_die( 'Template non raggiungibile su GitHub e non presente nel plugin.', 404 );
+			}
+			$body = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		}
+
 		nocache_headers();
-		header( 'Content-Type: ' . ( '.md' === substr( $file, -3 ) ? 'text/markdown' : 'application/json' ) . '; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename="' . basename( $file ) . '"' );
-		header( 'Content-Length: ' . filesize( $file ) );
-		readfile( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+		header( 'Content-Type: ' . ( '.md' === substr( $name, -3 ) ? 'text/markdown' : 'application/json' ) . '; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $name . '"' );
+		header( 'Content-Length: ' . strlen( $body ) );
+		echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		exit;
 	}
 );
@@ -515,7 +535,7 @@ function mb_gt_render_settings_page() {
 						}
 						?>
 					</ul>
-					<p class="mb-gt-help">Versione inclusa in questo plugin. L'ultima versione è sempre su <a href="https://github.com/<?php echo esc_attr( MB_GT_GITHUB_REPO ); ?>/tree/main/gtm-templates" target="_blank" rel="noopener">GitHub</a>.</p>
+					<p class="mb-gt-help">Scarica sempre l'ultima versione da <a href="https://github.com/<?php echo esc_attr( MB_GT_GITHUB_REPO ); ?>/tree/main/gtm-templates" target="_blank" rel="noopener">GitHub</a>, anche se il plugin non è aggiornato. Senza connessione usa la copia inclusa nel plugin.</p>
 				</div>
 			</section>
 

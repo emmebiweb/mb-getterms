@@ -58,7 +58,7 @@ Nella cartella [`gtm-templates`](gtm-templates) ci sono due container pronti da 
 - `mB-GTM-Template-SitoWeb.json`: GetTerms Consent Mode, GA4, Google Ads, Meta, Gravity Forms (4 slot), click su telefono, email e WhatsApp;
 - `mB-GTM-Template-Ecommerce.json`: come sopra, più l'e-commerce WooCommerce via GTM4WP (eventi GA4, conversione Ads Acquisto con conversioni avanzate, eventi Meta).
 
-Si compilano solo le costanti della cartella **01 ⚙️ Configurazione**; `-` = spento. Dettagli in [`gtm-templates/LEGGIMI.md`](gtm-templates/LEGGIMI.md). I file sono inclusi anche nel plugin e si scaricano da Impostazioni → GetTerms (mB) → scheda Google Tag Manager.
+Si compilano solo le costanti della cartella **01 ⚙️ Configurazione**; `-` = spento. Dettagli in [`gtm-templates/LEGGIMI.md`](gtm-templates/LEGGIMI.md). Si scaricano da Impostazioni → GetTerms (mB) → scheda Google Tag Manager: il plugin prende sempre l'ultima versione da GitHub (ramo `main`), anche se il plugin non è aggiornato; senza connessione usa la copia inclusa.
 
 ## Rilasciare una nuova versione
 
