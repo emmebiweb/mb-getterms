@@ -1188,27 +1188,6 @@
             ]
           }
         }
-      },
-      {
-        "accountId": "6005512286",
-        "containerId": "267253421",
-        "tagId": "79",
-        "name": "Google Ads AW--",
-        "type": "dest_aw",
-        "parameter": [
-          {
-            "type": "template",
-            "key": "destinationId",
-            "value": "AW--"
-          }
-        ],
-        "fingerprint": "1792073255754",
-        "firingTriggerId": [
-          "2147479573"
-        ],
-        "consentSettings": {
-          "consentStatus": "notSet"
-        }
       }
     ],
     "trigger": [
