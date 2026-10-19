@@ -253,6 +253,10 @@ function mb_gt_widget_css() {
 		$css .= '.gt-cookie-widget .gt-cookie-widget__button,.gt-cookie-widget .gt-cookie-widget__button__pill-button,'
 			. '.gt-cookie-dialog .gt-cookie-dialog__button,.gt-cookie-dialog .gt-cookie-dialog__button--pill{border-radius:' . $r . '!important}';
 	}
+	$offset = mb_gt_get( 'banner_offset_y' );
+	if ( '' !== $offset && null !== $offset ) {
+		$css .= '.gt-cookie-widget:not(.gt-cookie-widget--banner){bottom:' . max( 0, min( 400, (int) $offset ) ) . 'px!important}';
+	}
 	return (string) apply_filters( 'mb_gt_widget_css', $css );
 }
 

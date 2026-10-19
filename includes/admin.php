@@ -115,6 +115,8 @@ function mb_gt_sanitize_settings( $input ) {
 
 	$radius             = isset( $input['btns_radius'] ) ? trim( (string) $input['btns_radius'] ) : (string) $current['btns_radius'];
 	$out['btns_radius'] = ( '' === $radius ) ? '' : max( 0, min( 100, (int) $radius ) );
+	$offset                 = isset( $input['banner_offset_y'] ) ? trim( (string) $input['banner_offset_y'] ) : (string) $current['banner_offset_y'];
+	$out['banner_offset_y'] = ( '' === $offset ) ? '' : max( 0, min( 400, (int) $offset ) );
 
 	foreach ( $ranges as $key => $range ) {
 		$val         = isset( $input[ $key ] ) ? (int) $input[ $key ] : (int) $current[ $key ];
@@ -556,7 +558,8 @@ function mb_gt_render_settings_page() {
 				</div>
 				<div class="mb-gt-card">
 					<h2>Pulsanti del banner</h2>
-					<?php mb_gt_row( '<label for="mb-gt-btns-radius">Angoli</label>', '<div class="mb-gt-inline"><input type="number" min="0" max="100" class="small-text" id="mb-gt-btns-radius" name="' . $f( 'btns_radius' ) . '" value="' . esc_attr( $s['btns_radius'] ) . '" placeholder="—"><span>px</span></div>', 'Raggio dei pulsanti Accetta / Rifiuta / Preferenze / Salva, nel banner e nella finestra preferenze. Vuoto = come impostato in GetTerms; 0 = squadrati.' ); ?>
+					<?php mb_gt_row( '<label for="mb-gt-btns-radius">Angoli</label>', '<div class="mb-gt-inline"><input type="number" min="0" max="100" class="small-text" id="mb-gt-btns-radius" name="' . $f( 'btns_radius' ) . '" value="' . esc_attr( $s['btns_radius'] ) . '" placeholder="—"><span>px</span></div>', 'Raggio dei pulsanti Accetta / Rifiuta / Preferenze / Salva, nel banner e nella finestra preferenze. Vuoto = come impostato in GetTerms; 0 = squadrati.' );
+					mb_gt_row( '<label for="mb-gt-banner-offset">Distanza dal basso</label>', '<div class="mb-gt-inline"><input type="number" min="0" max="400" class="small-text" id="mb-gt-banner-offset" name="' . $f( 'banner_offset_y' ) . '" value="' . esc_attr( $s['banner_offset_y'] ) . '" placeholder="—"><span>px</span></div>', 'Alza il banner (stile card, pill o popup) per non coprire pulsanti fissi in basso, ad esempio WhatsApp o chat. Vuoto = posizione originale.' ); ?>
 				</div>
 			</section>
 
