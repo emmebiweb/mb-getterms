@@ -81,9 +81,11 @@ Entrambe includono:
 1. Dalla lista delle proprietà apri il menu ⋮ della demo e scegli **Duplicate Policy**.
 2. Inserisci nome, sede e **URL reale del sito**. L'URL va scritto qui: dopo non si può più cambiare, salvo chiederlo al supporto GetTerms.
 3. Nella proprietà nuova **riattiva il Consent Mode** (Cookie Banner → Google Consent Mode → On): la duplicazione lo spegne.
-4. Rifai l'**elenco dei cookie**, perché la duplicazione non lo copia. Lancia *Cookie Scan* sul sito reale oppure aggiungili a mano da *Cookie Management*.
-5. In *Company Details* compila ragione sociale e nome visualizzato.
-6. Sostituisci tutti i segnaposto: cerca **"XXX"** e **"xxx-"** in ogni policy.
+4. Apri **Cookie Banner → Configuration** e premi **Save** senza cambiare nulla. La duplicazione mostra le opzioni spuntate ma non le salva: senza questo passaggio mancano il pulsante preferenze, "Rifiuta tutto" e il blocco degli script.
+5. In **Appearance** imposta i colori del brand: sfondo, testo, pulsanti, testo dei pulsanti e link. Forma e posizione sono già impostate nelle demo: banner *Card* in basso a sinistra, tutti i pulsanti primari, pulsante preferenze a destra.
+6. Rifai l'**elenco dei cookie**, perché la duplicazione non lo copia. Lancia *Cookie Scan* sul sito reale oppure aggiungili a mano da *Cookie Management*.
+7. In *Company Details* compila ragione sociale e nome visualizzato.
+8. Sostituisci tutti i segnaposto: cerca **"XXX"** e **"xxx-"** in ogni policy.
 
 ## Segnaposto usati
 | Segnaposto | Cosa inserire |
@@ -106,3 +108,5 @@ Entrambe includono:
 - **Niente newsletter**: togli il servizio newsletter, la finalità "Email newsletters" e la voce GDPR "raccogliamo email per marketing".
 - **Politica di reso**: GetTerms genera la frase "attendere *almeno* N giorni affinché il reso sia processato". Il Codice del Consumo invece prevede il rimborso **entro 14 giorni** dal recesso: correggi la frase in *Custom Content*.
 - **Banner**: nel plugin mB, scheda **Policy**, scegli le pagine del sito per i link del banner.
+- **Pulsante preferenze** (plugin mB, scheda Aspetto): *Personalizzato*, quadrato 40×40, colore del brand, lato destro, 90 px dal basso, così resta sopra la barra di navigazione su mobile.
+- **Pulsante WhatsApp o chat in basso a sinistra**: alzalo sopra il banner con un CSS aggiuntivo (Aspetto → Personalizza → CSS aggiuntivo), ad es. `bottom:220px` su desktop e `250px` su mobile. In alternativa usa *Distanza dal basso* nel plugin per alzare il banner.
