@@ -38,11 +38,9 @@ function mb_gt_detect_conflicts() {
 		'cookie-notice'                     => 'Cookie Notice',
 		'getterms-cookie-consent-policies'  => 'GetTerms (plugin ufficiale)',
 	);
-	$gtm_plugins = array(
-		'duracelltomi-google-tag-manager' => 'GTM4WP',
-		'google-site-kit'                 => 'Site Kit by Google',
-		'insert-headers-and-footers'      => 'WPCode / Insert Headers and Footers',
-		'header-footer-code-manager'      => 'Header Footer Code Manager',
+	$code_plugins = array(
+		'insert-headers-and-footers' => 'WPCode / Insert Headers and Footers',
+		'header-footer-code-manager' => 'Header Footer Code Manager',
 	);
 
 	$messages = array();
@@ -52,13 +50,64 @@ function mb_gt_detect_conflicts() {
 		}
 	}
 	if ( mb_gt_get( 'gtm_enabled' ) ) {
-		foreach ( $gtm_plugins as $folder => $label ) {
+		if ( in_array( 'duracelltomi-google-tag-manager', $folders, true ) && mb_gt_gtm4wp_prints_container() ) {
+			$messages[] = 'GTM4WP inserisce anche lui il container GTM (doppio caricamento). In Impostazioni → Google Tag Manager imposta "Container code placement" su "Off": i dati e-commerce nel dataLayer continuano a funzionare.';
+		}
+		if ( in_array( 'google-site-kit', $folders, true ) ) {
+			$tags = mb_gt_sitekit_snippets();
+			if ( $tags ) {
+				$messages[] = 'Site Kit by Google inserisce ' . implode( ' e ', $tags ) . ' (doppio caricamento con GTM). In Site Kit → Impostazioni disattiva l\'inserimento dello snippet per questi servizi.';
+			}
+		}
+		foreach ( $code_plugins as $folder => $label ) {
 			if ( in_array( $folder, $folders, true ) ) {
-				$messages[] = $label . ' è attivo: verifica che non inserisca anche GTM / gtag (rischio di doppio caricamento).';
+				$messages[] = $label . ' è attivo: controlla che i suoi snippet non contengano GTM o gtag (doppio caricamento).';
 			}
 		}
 	}
 	return $messages;
+}
+
+/**
+ * GTM4WP stampa il container? Solo se ha un ID e il posizionamento non è "Off".
+ *
+ * @return bool
+ */
+function mb_gt_gtm4wp_prints_container() {
+	$opt = get_option( 'gtm4wp-options', array() );
+	if ( ! is_array( $opt ) || empty( $opt['gtm-code'] ) ) {
+		return false;
+	}
+	$off = defined( 'GTM4WP_PLACEMENT_OFF' ) ? (int) GTM4WP_PLACEMENT_OFF : 3;
+	return ! isset( $opt['gtm-code-placement'] ) || (int) $opt['gtm-code-placement'] !== $off;
+}
+
+/**
+ * Servizi per cui Site Kit inserisce il proprio snippet (GA4, Tag Manager, Google Ads).
+ *
+ * @return array Etichette dei servizi.
+ */
+function mb_gt_sitekit_snippets() {
+	$active  = (array) get_option( 'googlesitekit_active_modules', array() );
+	$modules = array(
+		'analytics-4' => array( 'googlesitekit_analytics-4_settings', 'measurementID', 'il tag GA4' ),
+		'tagmanager'  => array( 'googlesitekit_tagmanager_settings', 'containerID', 'il container GTM' ),
+		'ads'         => array( 'googlesitekit_ads_settings', 'conversionID', 'il tag Google Ads' ),
+	);
+	$tags = array();
+	foreach ( $modules as $slug => $m ) {
+		if ( ! in_array( $slug, $active, true ) ) {
+			continue;
+		}
+		$s = get_option( $m[0], array() );
+		if ( ! is_array( $s ) || empty( $s[ $m[1] ] ) ) {
+			continue;
+		}
+		if ( ! isset( $s['useSnippet'] ) || $s['useSnippet'] ) {
+			$tags[] = $m[2];
+		}
+	}
+	return $tags;
 }
 
 /**
@@ -68,6 +117,11 @@ add_action(
 	'admin_notices',
 	function () {
 		if ( ! current_user_can( 'manage_options' ) || ! mb_gt_get( 'enabled' ) ) {
+			return;
+		}
+		// Solo in Bacheca, nella pagina Plugin e nelle impostazioni del plugin.
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || ! in_array( $screen->id, array( 'dashboard', 'plugins', 'settings_page_' . MB_GT_SLUG ), true ) ) {
 			return;
 		}
 		$conflicts = mb_gt_detect_conflicts();
