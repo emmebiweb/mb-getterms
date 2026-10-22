@@ -308,8 +308,13 @@ function mb_gt_print_reopen_button() {
 		. 'for(var t in c.links){if(RE[t]&&RE[t].test(h)){a.setAttribute("href",c.links[t]);a.removeAttribute("target");a.removeAttribute("rel");}}}}'
 		. 'function apply(host){var sr=host&&host.shadowRoot;if(!sr)return false;fix(sr);'
 		. 'if(!host.__mbGtObs){host.__mbGtObs=new MutationObserver(function(){fix(sr);});host.__mbGtObs.observe(sr,{childList:true,subtree:true});}return true;}'
-		. 'function find(){var h=document.querySelector("cookie-widget-wrapper");return h&&apply(h);}'
-		. 'if(!find()){var mo=new MutationObserver(function(){if(find())mo.disconnect();});mo.observe(document.documentElement,{childList:true,subtree:true});setTimeout(function(){mo.disconnect();},30000);}'
+		// Il widget può ricreare il suo contenitore (es. temi che ritardano il JS e rilanciano gli eventi di caricamento):
+		// l'osservatore resta attivo e personalizza ogni nuovo cookie-widget-wrapper.
+		. 'function scan(n){var hs=document.querySelectorAll("cookie-widget-wrapper"),miss=false;for(var i=0;i<hs.length;i++){if(!apply(hs[i]))miss=true;}'
+		. 'n=n||0;if(miss&&n<100){setTimeout(function(){scan(n+1);},100);}}'
+		. 'scan(0);var mo=new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var ns=ms[i].addedNodes;for(var j=0;j<ns.length;j++){var n=ns[j];'
+		. 'if(n.nodeType===1&&(n.nodeName==="COOKIE-WIDGET-WRAPPER"||n.querySelector&&n.querySelector("cookie-widget-wrapper"))){scan(0);return;}}}});'
+		. 'mo.observe(document.documentElement,{childList:true,subtree:true});'
 		. '})(' . $config . ');</script>' . "\n";
 	// phpcs:enable
 }
