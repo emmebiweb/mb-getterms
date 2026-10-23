@@ -21,6 +21,7 @@ Plugin WordPress leggero per installare il CMP **GetTerms** senza il plugin uffi
 - Pagina impostazioni a schede (Generale, Google Tag Manager, Aspetto, Policy, Verifica), con il selettore colori di WordPress e l'anteprima dal vivo del pulsante preferenze.
 - **Distanza del banner dal basso**: alza il banner (card, pill o popup) per non coprire pulsanti fissi come WhatsApp o la chat.
 - **Angoli dei pulsanti del banner**: raggio in px per i pulsanti Accetta / Rifiuta / Preferenze / Salva, sia nel banner sia nella finestra preferenze (vuoto = come impostato in GetTerms).
+- **Liste prodotti per GTM4WP** (opzione nella scheda Google Tag Manager, spenta di default): molti temi (Impreza, XStore...) disegnano shop e categorie con una griglia propria che non chiama l'hook di WooCommerce usato da GTM4WP, quindi `view_item_list` non parte. Con l'opzione attiva, sulle pagine shop, categoria, tag e ricerca il plugin aggiunge i dati prodotto di GTM4WP che mancano (generati da GTM4WP stesso, senza doppioni) e l'evento torna a funzionare. Non copre caroselli o griglie in pagine normali, né i prodotti caricati con "carica altri".
 - **Resta attivo dopo gli aggiornamenti**: se WordPress lo disattiva durante l'aggiornamento, il plugin si riattiva da solo (dalla 1.1.0 in poi; l'aggiornamento *alla* 1.1.0 parte ancora dal codice 1.0.1).
 
 Finché non spunti **Attiva sul sito**, il plugin non stampa nulla: puoi configurarlo in anticipo senza toccare il sito.

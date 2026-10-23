@@ -94,6 +94,7 @@ function mb_gt_sanitize_settings( $input ) {
 	$out['lang']         = isset( $input['lang'] ) ? mb_gt_norm_lang( sanitize_text_field( $input['lang'] ) ) : $current['lang'];
 	$out['gtm_enabled']  = empty( $input['gtm_enabled'] ) ? 0 : 1;
 	$out['gtm_noscript'] = empty( $input['gtm_noscript'] ) ? 0 : 1;
+	$out['gtm4wp_lists'] = empty( $input['gtm4wp_lists'] ) ? 0 : 1;
 
 	// Pulsante preferenze cookie.
 	$out['btn_style'] = ( isset( $input['btn_style'] ) && 'custom' === $input['btn_style'] ) ? 'custom' : 'original';
@@ -514,6 +515,7 @@ function mb_gt_render_settings_page() {
 					mb_gt_row( 'Inserimento', mb_gt_toggle( 'gtm_enabled', $s['gtm_enabled'], 'Stampa GTM subito dopo il banner' ), 'Lascia spento se GTM è già inserito dal tema o da un altro plugin (e verifica che sia caricato dopo il banner).' );
 					mb_gt_row( '<label for="mb-gt-gtm">ID container</label>', '<input type="text" id="mb-gt-gtm" name="' . $f( 'gtm_id' ) . '" value="' . esc_attr( $s['gtm_id'] ) . '" class="regular-text code" placeholder="GTM-XXXXXXX">', '', 'mb-gt-dep-gtm' );
 					mb_gt_row( 'Noscript', mb_gt_toggle( 'gtm_noscript', $s['gtm_noscript'], 'Aggiungi l\'iframe noscript dopo <body>' ), 'Richiede un tema con <code>wp_body_open</code>.', 'mb-gt-dep-gtm' );
+					mb_gt_row( 'Liste prodotti', mb_gt_toggle( 'gtm4wp_lists', $s['gtm4wp_lists'], 'Completa view_item_list di GTM4WP per le griglie del tema' ), 'Per i temi che disegnano shop e categorie con una griglia propria (Impreza, XStore...): aggiunge i dati prodotto di GTM4WP che mancano, senza doppioni. Copre shop, categorie, tag e ricerca; richiede GTM4WP con e-commerce attivo.' );
 					?>
 				</div>
 				<div class="mb-gt-card mb-gt-card--note">
