@@ -96,6 +96,7 @@ function mb_gt_sanitize_settings( $input ) {
 	$out['gtm_noscript'] = empty( $input['gtm_noscript'] ) ? 0 : 1;
 	$out['gtm4wp_lists'] = empty( $input['gtm4wp_lists'] ) ? 0 : 1;
 	$out['cookie_list']  = empty( $input['cookie_list'] ) ? 0 : 1;
+	$out['btn_home_only'] = empty( $input['btn_home_only'] ) ? 0 : 1;
 
 	// Pulsante preferenze cookie.
 	$out['btn_style'] = ( isset( $input['btn_style'] ) && 'custom' === $input['btn_style'] ) ? 'custom' : 'original';
@@ -119,6 +120,8 @@ function mb_gt_sanitize_settings( $input ) {
 	$out['btns_radius'] = ( '' === $radius ) ? '' : max( 0, min( 100, (int) $radius ) );
 	$offset                 = isset( $input['banner_offset_y'] ) ? trim( (string) $input['banner_offset_y'] ) : (string) $current['banner_offset_y'];
 	$out['banner_offset_y'] = ( '' === $offset ) ? '' : max( 0, min( 400, (int) $offset ) );
+	$bradius              = isset( $input['banner_radius'] ) ? trim( (string) $input['banner_radius'] ) : (string) $current['banner_radius'];
+	$out['banner_radius'] = ( '' === $bradius ) ? '' : max( 0, min( 60, (int) $bradius ) );
 
 	foreach ( $ranges as $key => $range ) {
 		$val         = isset( $input[ $key ] ) ? (int) $input[ $key ] : (int) $current[ $key ];
@@ -569,6 +572,11 @@ function mb_gt_render_settings_page() {
 								'Per allinearlo a un altro pulsante fisso (es. accessibilità) usa le stesse misure e una distanza dal basso che lo metta sopra o sotto.',
 								'mb-gt-dep-custom'
 							);
+							mb_gt_row(
+								'Pagine',
+								mb_gt_toggle( 'btn_home_only', $s['btn_home_only'], 'Mostra il pulsante solo in home' ),
+								'Nelle altre pagine la scelta si cambia da un link: aggiungi al menu (es. footer) un link personalizzato con URL <code>#preferenze-cookie</code>, oppure usa <code>[mb_getterms_preferences_link]</code>. Il link riapre il banner.'
+							);
 							?>
 						</div>
 						<div class="mb-gt-split__side mb-gt-dep-custom">
@@ -580,8 +588,9 @@ function mb_gt_render_settings_page() {
 					</div>
 				</div>
 				<div class="mb-gt-card">
-					<h2>Pulsanti del banner</h2>
-					<?php mb_gt_row( '<label for="mb-gt-btns-radius">Angoli</label>', '<div class="mb-gt-inline"><input type="number" min="0" max="100" class="small-text" id="mb-gt-btns-radius" name="' . $f( 'btns_radius' ) . '" value="' . esc_attr( $s['btns_radius'] ) . '" placeholder="—"><span>px</span></div>', 'Raggio dei pulsanti Accetta / Rifiuta / Preferenze / Salva, nel banner e nella finestra preferenze. Vuoto = come impostato in GetTerms; 0 = squadrati.' );
+					<h2>Banner</h2>
+					<?php mb_gt_row( '<label for="mb-gt-banner-radius">Angoli del banner</label>', '<div class="mb-gt-inline"><input type="number" min="0" max="60" class="small-text" id="mb-gt-banner-radius" name="' . $f( 'banner_radius' ) . '" value="' . esc_attr( $s['banner_radius'] ) . '" placeholder="—"><span>px</span></div>', 'Raggio degli angoli del banner (card, pill o popup) e della finestra preferenze. Vuoto = come impostato in GetTerms; 0 = squadrati.' );
+					mb_gt_row( '<label for="mb-gt-btns-radius">Angoli dei pulsanti</label>', '<div class="mb-gt-inline"><input type="number" min="0" max="100" class="small-text" id="mb-gt-btns-radius" name="' . $f( 'btns_radius' ) . '" value="' . esc_attr( $s['btns_radius'] ) . '" placeholder="—"><span>px</span></div>', 'Raggio dei pulsanti Accetta / Rifiuta / Preferenze / Salva, nel banner e nella finestra preferenze. Vuoto = come impostato in GetTerms; 0 = squadrati.' );
 					mb_gt_row( '<label for="mb-gt-banner-offset">Distanza dal basso</label>', '<div class="mb-gt-inline"><input type="number" min="0" max="400" class="small-text" id="mb-gt-banner-offset" name="' . $f( 'banner_offset_y' ) . '" value="' . esc_attr( $s['banner_offset_y'] ) . '" placeholder="—"><span>px</span></div>', 'Alza il banner (stile card, pill o popup) per non coprire pulsanti fissi in basso, ad esempio WhatsApp o chat. Vuoto = posizione originale.' ); ?>
 				</div>
 			</section>
@@ -622,6 +631,7 @@ function mb_gt_render_settings_page() {
 							<tr><td>Cookie Policy</td><td><code class="mb-gt-copy">[mb_getterms_policy type="cookie"]</code></td></tr>
 							<tr><td>Termini e condizioni</td><td><code class="mb-gt-copy">[mb_getterms_policy type="terms"]</code></td></tr>
 							<tr><td>Elenco cookie + pulsante preferenze</td><td><code class="mb-gt-copy">[mb_getterms_cookie_list]</code></td></tr>
+							<tr><td>Link «Preferenze cookie»</td><td><code class="mb-gt-copy">[mb_getterms_preferences_link]</code></td></tr>
 						</table>
 						<p class="mb-gt-help">Senza <code>lang</code> usa la lingua del banner; per forzarla: <code>[mb_getterms_policy type="privacy" lang="en"]</code>. Clic sul codice per copiarlo.</p>
 						<?php if ( $policies && $languages ) : ?>

@@ -3,7 +3,7 @@
  * Plugin Name:       mB GetTerms Consent
  * Plugin URI:        https://github.com/emmebiweb/mb-getterms
  * Description:       Installa il CMP GetTerms (blocker + banner) come primo script dell'head, seguito da Google Tag Manager, più le policy GetTerms via shortcode. Alternativa leggera al plugin ufficiale, pensata per Google Consent Mode gestito in GTM.
- * Version:           1.4.5
+ * Version:           1.4.6
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            mB
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MB_GT_VERSION', '1.4.5' );
+define( 'MB_GT_VERSION', '1.4.6' );
 define( 'MB_GT_FILE', __FILE__ );
 define( 'MB_GT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MB_GT_URL', plugin_dir_url( __FILE__ ) );
@@ -70,10 +70,14 @@ function mb_gt_defaults() {
 		'btn_side'         => 'left',     // left | right.
 		'btn_offset_x'     => 0,
 		'btn_offset_y'     => 20,
+		// Mostra il pulsante preferenze solo in home (altrove si usa il link "#preferenze-cookie").
+		'btn_home_only'    => 0,
 		// Raggio angoli dei pulsanti nel banner e nella finestra preferenze ('' = originale).
 		'btns_radius'      => '',
 		// Distanza del banner (card/pill/popup) dal fondo della pagina, in px ('' = originale).
 		'banner_offset_y'  => '',
+		// Raggio degli angoli del banner (card/pill/popup) e della finestra preferenze ('' = originale).
+		'banner_radius'    => '',
 		// Pagine del sito a cui indirizzare i link delle policy nel banner (0 = pagina GetTerms).
 		'policy_cookie_page'  => 0,
 		'policy_privacy_page' => 0,
@@ -122,6 +126,7 @@ require_once MB_GT_DIR . 'includes/frontend.php';
 require_once MB_GT_DIR . 'includes/updater.php';
 require_once MB_GT_DIR . 'includes/gtm4wp-lists.php';
 require_once MB_GT_DIR . 'includes/cookie-list.php';
+require_once MB_GT_DIR . 'includes/preferences-link.php';
 
 if ( is_admin() ) {
 	require_once MB_GT_DIR . 'includes/admin.php';

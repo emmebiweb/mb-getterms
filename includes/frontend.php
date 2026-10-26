@@ -253,6 +253,13 @@ function mb_gt_widget_css() {
 		$css .= '.gt-cookie-widget .gt-cookie-widget__button,.gt-cookie-widget .gt-cookie-widget__button__pill-button,'
 			. '.gt-cookie-dialog .gt-cookie-dialog__button,.gt-cookie-dialog .gt-cookie-dialog__button--pill{border-radius:' . $r . '!important}';
 	}
+	$bradius = mb_gt_get( 'banner_radius' );
+	if ( '' !== $bradius && null !== $bradius ) {
+		$css .= '.gt-cookie-widget:not(.gt-cookie-widget--banner),.gt-cookie-dialog .gt-cookie-dialog__modal{border-radius:' . max( 0, min( 60, (int) $bradius ) ) . 'px!important}';
+	}
+	if ( mb_gt_get( 'btn_home_only' ) && ! is_front_page() ) {
+		$css .= '.gt-cookie-reopen-btn{display:none!important}';
+	}
 	$offset = mb_gt_get( 'banner_offset_y' );
 	if ( '' !== $offset && null !== $offset ) {
 		$css .= '.gt-cookie-widget:not(.gt-cookie-widget--banner){bottom:' . max( 0, min( 400, (int) $offset ) ) . 'px!important}';

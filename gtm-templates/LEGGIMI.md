@@ -116,6 +116,8 @@ Entrambe includono:
 - **Termini di servizio**: pubblicali nella pagina o scheda "Note legali", sotto i dati aziendali, con lo shortcode `[mb_getterms_policy type="terms"]`. Contengono anche la clausola sull'intelligenza artificiale.
 - **Banner**: nel plugin mB, scheda **Policy**, scegli le pagine del sito per i link del banner.
 - **Pulsante preferenze** (plugin mB, scheda Aspetto): *Personalizzato*, quadrato 40×40, colore del brand, lato sinistro, 90 px dal basso, così resta sopra la barra di navigazione su mobile.
+- **Pulsante preferenze solo in home** (plugin mB 1.4.6, scheda Aspetto → *Pagine*): se il cliente vuole il pulsante solo in home, attiva l'opzione e aggiungi al menu del footer un link personalizzato «Preferenze cookie» con URL `#preferenze-cookie` (oppure `[mb_getterms_preferences_link]`): da ogni pagina deve restare possibile cambiare la scelta.
+- **Angoli del banner** (plugin mB 1.4.6, scheda Aspetto → *Banner*): 0 per un banner squadrato come i pulsanti.
 - **Pulsante WhatsApp o chat in basso a sinistra**: alzalo sopra il banner con un CSS aggiuntivo (Aspetto → Personalizza → CSS aggiuntivo), ad es. `bottom:220px` su desktop e `250px` su mobile. In alternativa usa *Distanza dal basso* nel plugin per alzare il banner.
 
 ---
