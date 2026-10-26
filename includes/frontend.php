@@ -420,7 +420,13 @@ function mb_gt_policy_markup( $policy, $lang = '' ) {
 
 	mb_gt_enqueue_document_embed();
 
-	return '<div class="getterms-document-embed" data-getterms="' . esc_attr( $token ) . '" data-getterms-document="' . esc_attr( $policy ) . '" data-getterms-lang="' . esc_attr( $lang ) . '" data-getterms-mode="direct" data-getterms-env="https://gettermscdn.com"></div>';
+	$html = '<div class="getterms-document-embed" data-getterms="' . esc_attr( $token ) . '" data-getterms-document="' . esc_attr( $policy ) . '" data-getterms-lang="' . esc_attr( $lang ) . '" data-getterms-mode="direct" data-getterms-env="https://gettermscdn.com"></div>';
+
+	// Sotto la Cookie Policy: elenco dei cookie del banner + pulsante preferenze.
+	if ( 'cookie' === $policy && mb_gt_get( 'cookie_list' ) && function_exists( 'mb_gt_cookie_list_markup' ) ) {
+		$html .= mb_gt_cookie_list_markup( $lang );
+	}
+	return $html;
 }
 
 /**

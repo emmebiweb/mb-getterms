@@ -22,6 +22,7 @@ Plugin WordPress leggero per installare il CMP **GetTerms** senza il plugin uffi
 - **Distanza del banner dal basso**: alza il banner (card, pill o popup) per non coprire pulsanti fissi come WhatsApp o la chat.
 - **Angoli dei pulsanti del banner**: raggio in px per i pulsanti Accetta / Rifiuta / Preferenze / Salva, sia nel banner sia nella finestra preferenze (vuoto = come impostato in GetTerms).
 - **Liste prodotti per GTM4WP** (opzione nella scheda Google Tag Manager, spenta di default): molti temi (Impreza, XStore...) disegnano shop e categorie con una griglia propria che non chiama l'hook di WooCommerce usato da GTM4WP, quindi `view_item_list` non parte. Con l'opzione attiva, sulle pagine shop, categoria, tag e ricerca il plugin aggiunge i dati prodotto di GTM4WP che mancano (generati da GTM4WP stesso, senza doppioni) e l'evento torna a funzionare. Non copre caroselli o griglie in pagine normali, né i prodotti caricati con "carica altri".
+- **Elenco dei cookie sotto la Cookie Policy** (scheda Policy, attivo di default, dalla 1.4.5): la Cookie Policy di GetTerms descrive solo le categorie, mentre l'elenco dei singoli cookie sta nel pannello preferenze del banner. Il plugin legge gli stessi dati che usa il banner (cookie e altro archivio del sito classificati in *Cookie Management*, con le intestazioni nella lingua del banner) e li mostra in una tabella sotto lo shortcode della Cookie Policy, divisi per categoria con nome, descrizione, piattaforma e durata, più il pulsante «Gestisci le preferenze sui cookie» che riapre il pannello del banner. Si aggiorna da solo a ogni scansione. Per metterlo altrove: `[mb_getterms_cookie_list]`. Le descrizioni dei cookie arrivano da GetTerms in inglese.
 - **Resta attivo dopo gli aggiornamenti**: se WordPress lo disattiva durante l'aggiornamento, il plugin si riattiva da solo (dalla 1.1.0 in poi; l'aggiornamento *alla* 1.1.0 parte ancora dal codice 1.0.1).
 
 Finché non spunti **Attiva sul sito**, il plugin non stampa nulla: puoi configurarlo in anticipo senza toccare il sito.
@@ -37,7 +38,7 @@ Finché non spunti **Attiva sul sito**, il plugin non stampa nulla: puoi configu
 7. Pubblica il container GTM.
 8. Svuota le cache (plugin, hosting, CDN) e premi **Verifica homepage**.
 9. Controlla il Consent Mode con GTM Preview / Tag Assistant: senza scelta tutto *denied* tranne security storage, dopo l'accettazione tutto *granted*.
-10. Sostituisci le pagine Cookie Policy e Privacy con gli shortcode delle policy GetTerms.
+10. Sostituisci le pagine Cookie Policy e Privacy con gli shortcode delle policy GetTerms (sotto la Cookie Policy compaiono da soli l'elenco dei cookie e il pulsante preferenze).
 
 ## Configurazione GTM
 

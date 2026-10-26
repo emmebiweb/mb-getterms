@@ -95,6 +95,7 @@ function mb_gt_sanitize_settings( $input ) {
 	$out['gtm_enabled']  = empty( $input['gtm_enabled'] ) ? 0 : 1;
 	$out['gtm_noscript'] = empty( $input['gtm_noscript'] ) ? 0 : 1;
 	$out['gtm4wp_lists'] = empty( $input['gtm4wp_lists'] ) ? 0 : 1;
+	$out['cookie_list']  = empty( $input['cookie_list'] ) ? 0 : 1;
 
 	// Pulsante preferenze cookie.
 	$out['btn_style'] = ( isset( $input['btn_style'] ) && 'custom' === $input['btn_style'] ) ? 'custom' : 'original';
@@ -608,6 +609,7 @@ function mb_gt_render_settings_page() {
 						);
 						mb_gt_row( '<label for="mb-gt-' . esc_attr( $key ) . '">' . esc_html( $label ) . '</label>', $dropdown );
 					}
+					mb_gt_row( 'Elenco cookie', mb_gt_toggle( 'cookie_list', $s['cookie_list'], 'Mostra l\'elenco dei cookie sotto la Cookie Policy' ), 'Sotto lo shortcode della Cookie Policy aggiunge la tabella dei cookie rilevati da GetTerms (nome, piattaforma, durata, divisi per categoria, come nel pannello del banner) e un pulsante «Gestisci le preferenze sui cookie» che riapre il banner. Si aggiorna da solo a ogni scansione. Per metterlo altrove: <code>[mb_getterms_cookie_list]</code>.' );
 					?>
 				</div>
 				<div class="mb-gt-card">
@@ -619,6 +621,7 @@ function mb_gt_render_settings_page() {
 							<tr><td>Privacy Policy</td><td><code class="mb-gt-copy">[mb_getterms_policy type="privacy"]</code></td></tr>
 							<tr><td>Cookie Policy</td><td><code class="mb-gt-copy">[mb_getterms_policy type="cookie"]</code></td></tr>
 							<tr><td>Termini e condizioni</td><td><code class="mb-gt-copy">[mb_getterms_policy type="terms"]</code></td></tr>
+							<tr><td>Elenco cookie + pulsante preferenze</td><td><code class="mb-gt-copy">[mb_getterms_cookie_list]</code></td></tr>
 						</table>
 						<p class="mb-gt-help">Senza <code>lang</code> usa la lingua del banner; per forzarla: <code>[mb_getterms_policy type="privacy" lang="en"]</code>. Clic sul codice per copiarlo.</p>
 						<?php if ( $policies && $languages ) : ?>
