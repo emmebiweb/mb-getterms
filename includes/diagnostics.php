@@ -12,9 +12,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Plugin attivi che entrano in conflitto (altri CMP o altri inseritori di GTM).
  *
+ * @param bool $only_cmp Solo gli altri CMP, senza i controlli su GTM.
  * @return array Elenco di messaggi.
  */
-function mb_gt_detect_conflicts() {
+function mb_gt_detect_conflicts( $only_cmp = false ) {
 	$active = (array) get_option( 'active_plugins', array() );
 	if ( is_multisite() ) {
 		$active = array_merge( $active, array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
@@ -38,10 +39,6 @@ function mb_gt_detect_conflicts() {
 		'cookie-notice'                     => 'Cookie Notice',
 		'getterms-cookie-consent-policies'  => 'GetTerms (plugin ufficiale)',
 	);
-	$code_plugins = array(
-		'insert-headers-and-footers' => 'WPCode / Insert Headers and Footers',
-		'header-footer-code-manager' => 'Header Footer Code Manager',
-	);
 
 	$messages = array();
 	foreach ( $cmps as $folder => $label ) {
@@ -49,7 +46,7 @@ function mb_gt_detect_conflicts() {
 			$messages[] = $label . ' è attivo: con il banner GetTerms avresti due CMP. Disattivalo.';
 		}
 	}
-	if ( mb_gt_get( 'gtm_enabled' ) ) {
+	if ( ! $only_cmp && mb_gt_get( 'gtm_enabled' ) ) {
 		if ( in_array( 'duracelltomi-google-tag-manager', $folders, true ) && mb_gt_gtm4wp_prints_container() ) {
 			$messages[] = 'GTM4WP inserisce anche lui il container GTM (doppio caricamento). In Impostazioni → Google Tag Manager imposta "Container code placement" su "Off": i dati e-commerce nel dataLayer continuano a funzionare.';
 		}
@@ -59,9 +56,17 @@ function mb_gt_detect_conflicts() {
 				$messages[] = 'Site Kit by Google inserisce ' . implode( ' e ', $tags ) . ' (doppio caricamento con GTM). In Site Kit → Impostazioni disattiva l\'inserimento dello snippet per questi servizi.';
 			}
 		}
-		foreach ( $code_plugins as $folder => $label ) {
-			if ( in_array( $folder, $folders, true ) ) {
-				$messages[] = $label . ' è attivo: controlla che i suoi snippet non contengano GTM o gtag (doppio caricamento).';
+		// Plugin di snippet: avviso solo se uno snippet attivo contiene davvero GTM o gtag.
+		if ( in_array( 'insert-headers-and-footers', $folders, true ) ) {
+			$names = mb_gt_wpcode_gtm_snippets();
+			if ( $names ) {
+				$messages[] = 'WPCode: ' . mb_gt_snippet_list( $names ) . ' contiene GTM o gtag (doppio caricamento). Disattiva lo snippet: GTM lo inserisce già questo plugin.';
+			}
+		}
+		if ( in_array( 'header-footer-code-manager', $folders, true ) ) {
+			$names = mb_gt_hfcm_gtm_snippets();
+			if ( $names ) {
+				$messages[] = 'Header Footer Code Manager: ' . mb_gt_snippet_list( $names ) . ' contiene GTM o gtag (doppio caricamento). Disattiva lo snippet: GTM lo inserisce già questo plugin.';
 			}
 		}
 	}
@@ -111,6 +116,164 @@ function mb_gt_sitekit_snippets() {
 }
 
 /**
+ * Il codice contiene GTM o gtag?
+ *
+ * @param string $code Codice dello snippet.
+ * @return bool
+ */
+function mb_gt_code_has_gtm( $code ) {
+	return (bool) preg_match( '#googletagmanager\.com|\bGTM-[A-Z0-9]{4,10}\b|\bgtag\s*\(#i', (string) $code );
+}
+
+/**
+ * Elenco leggibile dei nomi degli snippet.
+ *
+ * @param array $names Nomi.
+ * @return string
+ */
+function mb_gt_snippet_list( array $names ) {
+	$names = array_slice( $names, 0, 5 );
+	return ( count( $names ) > 1 ? 'gli snippet «' : 'lo snippet «' ) . implode( '», «', $names ) . '»';
+}
+
+/**
+ * Snippet WPCode attivi (post "wpcode" pubblicati) che contengono GTM o gtag.
+ *
+ * @return array Titoli degli snippet.
+ */
+function mb_gt_wpcode_gtm_snippets() {
+	$names = array();
+	$posts = get_posts(
+		array(
+			'post_type'        => 'wpcode',
+			'post_status'      => 'publish',
+			'numberposts'      => 200,
+			'suppress_filters' => true,
+		)
+	);
+	foreach ( $posts as $post ) {
+		if ( mb_gt_code_has_gtm( $post->post_content ) ) {
+			$names[] = '' !== $post->post_title ? $post->post_title : '#' . $post->ID;
+		}
+	}
+	// Header e footer globali di WPCode (versione lite).
+	$global = (string) get_option( 'ihaf_insert_header', '' ) . (string) get_option( 'ihaf_insert_body', '' ) . (string) get_option( 'ihaf_insert_footer', '' );
+	if ( mb_gt_code_has_gtm( $global ) ) {
+		$names[] = 'Header & Footer globale';
+	}
+	return $names;
+}
+
+/**
+ * Snippet attivi di Header Footer Code Manager che contengono GTM o gtag.
+ *
+ * @return array Nomi degli snippet.
+ */
+function mb_gt_hfcm_gtm_snippets() {
+	global $wpdb;
+	$table = $wpdb->prefix . 'hfcm_scripts';
+	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return array();
+	}
+	$rows  = $wpdb->get_results( "SELECT name, snippet FROM `{$table}` WHERE status = 'active'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$names = array();
+	foreach ( (array) $rows as $row ) {
+		if ( mb_gt_code_has_gtm( $row->snippet ) ) {
+			$names[] = (string) $row->name;
+		}
+	}
+	return $names;
+}
+
+/**
+ * Conta GTM e gtag diretti in un HTML.
+ *
+ * @param string $html HTML della pagina.
+ * @return array ids, loaders, gtag, dup.
+ */
+function mb_gt_gtm_scan_html( $html ) {
+	preg_match_all( '#GTM-[A-Z0-9]{4,10}#', $html, $ids );
+	$ids     = array_values( array_unique( $ids[0] ) );
+	$loaders = preg_match_all( '#googletagmanager\.com/gtm\.js#', $html );
+	$gtag    = (bool) preg_match( '#googletagmanager\.com/gtag/js\?id=(G-|AW-|UA-)#', $html );
+	return array(
+		'ids'     => $ids,
+		'loaders' => (int) $loaders,
+		'gtag'    => $gtag,
+		'dup'     => $loaders > 1 || count( $ids ) > 1 || $gtag,
+	);
+}
+
+/**
+ * Esito della verifica GTM sulla homepage, in cache per 12 ore.
+ * Restituisce null se la homepage non si può scaricare.
+ *
+ * @param string|null $html HTML già scaricato (aggiorna la cache).
+ * @return array|null
+ */
+function mb_gt_home_gtm_status( $html = null ) {
+	if ( null === $html ) {
+		$cached = get_transient( 'mb_gt_home_gtm' );
+		if ( is_array( $cached ) ) {
+			return $cached['ok'] ? $cached : null;
+		}
+		$response = wp_remote_get(
+			add_query_arg( 'mb_gt_check', time(), home_url( '/' ) ),
+			array(
+				'timeout'    => 8,
+				'user-agent' => 'Mozilla/5.0 (mB GetTerms check)',
+			)
+		);
+		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			set_transient( 'mb_gt_home_gtm', array( 'ok' => false ), HOUR_IN_SECONDS );
+			return null;
+		}
+		$html = (string) wp_remote_retrieve_body( $response );
+	}
+	$status       = mb_gt_gtm_scan_html( $html );
+	$status['ok'] = true;
+	set_transient( 'mb_gt_home_gtm', $status, 12 * HOUR_IN_SECONDS );
+	return $status;
+}
+
+/**
+ * Messaggi da mostrare: i conflitti con altri CMP sempre; quelli su GTM solo se la
+ * homepage carica davvero GTM o gtag due volte (o se non si riesce a verificarla).
+ *
+ * @param array|null $scan Esito di mb_gt_home_gtm_status().
+ * @return array
+ */
+function mb_gt_conflict_messages( $scan ) {
+	$all = mb_gt_detect_conflicts();
+	if ( null === $scan || ! mb_gt_get( 'gtm_enabled' ) ) {
+		return $all;
+	}
+	$messages = mb_gt_detect_conflicts( true );
+	if ( $scan['dup'] ) {
+		$gtm_msgs = array_values( array_diff( $all, $messages ) );
+		if ( $gtm_msgs ) {
+			$messages = array_merge( $messages, $gtm_msgs );
+		} else {
+			$messages[] = 'La homepage carica Google Tag Manager o gtag più di una volta ('
+				. ( $scan['ids'] ? implode( ', ', $scan['ids'] ) . ', ' : '' ) . 'loader gtm.js: ' . $scan['loaders']
+				. ( $scan['gtag'] ? ', gtag.js diretto presente' : '' )
+				. '). Cerca chi lo inserisce: tema, altri plugin o codice nell\'header.';
+		}
+	}
+	return $messages;
+}
+
+// La verifica della homepage va rifatta quando cambiano le impostazioni o i plugin attivi.
+foreach ( array( 'update_option_' . MB_GT_OPTION, 'activated_plugin', 'deactivated_plugin', 'upgrader_process_complete' ) as $mb_gt_hook ) {
+	add_action(
+		$mb_gt_hook,
+		function () {
+			delete_transient( 'mb_gt_home_gtm' );
+		}
+	);
+}
+
+/**
  * Avviso in bacheca quando il banner è attivo e ci sono conflitti.
  */
 add_action(
@@ -124,7 +287,7 @@ add_action(
 		if ( ! $screen || ! in_array( $screen->id, array( 'dashboard', 'plugins', 'settings_page_' . MB_GT_SLUG ), true ) ) {
 			return;
 		}
-		$conflicts = mb_gt_detect_conflicts();
+		$conflicts = mb_gt_conflict_messages( mb_gt_get( 'gtm_enabled' ) ? mb_gt_home_gtm_status() : null );
 		if ( ! $conflicts ) {
 			return;
 		}
@@ -256,7 +419,8 @@ add_action(
 		}
 		$add( $found ? 'error' : 'ok', $found ? 'Script di altri CMP attivi nella pagina: ' . implode( ', ', $found ) . '.' : 'Nessun altro CMP attivo nella pagina.' );
 
-		foreach ( mb_gt_detect_conflicts() as $msg ) {
+		$scan = 200 === $code ? mb_gt_home_gtm_status( $html ) : null;
+		foreach ( mb_gt_conflict_messages( $scan ) as $msg ) {
 			$add( 'warn', $msg );
 		}
 
